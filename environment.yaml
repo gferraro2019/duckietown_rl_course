@@ -1,0 +1,15 @@
+name: duckietownrl
+channels:
+    - pytorch
+    - defaults
+dependencies:
+    - python=3.8
+    - pip    
+    - pytorch
+    - torchvision
+    - numpy=1.21
+    - pip:
+        - gym
+        - pyglet
+        - opencv-python
+        - e .

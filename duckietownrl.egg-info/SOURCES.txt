@@ -1,0 +1,17 @@
+LICENSE
+README.md
+setup.py
+duckietownrl.egg-info/PKG-INFO
+duckietownrl.egg-info/SOURCES.txt
+duckietownrl.egg-info/dependency_links.txt
+duckietownrl.egg-info/top_level.txt
+src/__init__.py
+src/joystick_control copy.py
+src/manual_control.py
+src/algorithms/__init__.py
+src/algorithms/ddpg.py
+src/utils/__init__.py
+src/utils/env.py
+src/utils/utils.py
+src/utils/wrappers.py
+tests/__init__.py
