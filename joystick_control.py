@@ -14,7 +14,7 @@ import numpy as np
 import pyglet
 from pyglet.window import key
 
-from gym_duckietown.envs import DuckietownEnv
+from duckietownrl.envs import DuckietownEnv
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--env-name", default=None)
@@ -47,10 +47,10 @@ import os
 import numpy as np
 
 # Duckietown Specific
-from src.algorithms.ddpg import DDPG
+from duckietownrl.algorithms.ddpg import DDPG
 from utils import seed, evaluate_policy, ReplayBuffer
-from src.utils.env import launch_env
-from src.utils.wrappers import (
+from duckietownrl.utils.env import launch_env
+from duckietownrl.utils.wrappers import (
     NormalizeWrapper,
     ImgWrapper,
     DtRewardWrapper,

@@ -14,7 +14,7 @@ import numpy as np
 import pyglet
 from pyglet.window import key
 
-from gym_duckietown.envs import DuckietownEnv
+from duckietownrl.gym_duckietown.envs import DuckietownEnv
 
 # from experiments.utils import save_img
 
