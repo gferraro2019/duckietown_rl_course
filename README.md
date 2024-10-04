@@ -1,17 +1,17 @@
-# DUCKIETOWNRL
+## DUCKIETOWNRL:
 A Reinforcement Learning Course with DuckieTown.
 
-# INSTALLATION
+## INSTALLATION:
 
-## 0. Create the conda environnment
-'conda env create -f environment.yaml'
+### 0. Create the conda environnment:
+`conda env create -f environment.yaml`
 
-## 1. Activate the new conda environnment
-'conda activate duckietownrl'
+### 1. Activate the new conda environnment:
+`conda activate duckietownrl`œ
 
-# PLAY WITH THE SIMULATOR
-## For playing with the keyboard
-'./manual_control.py'
+## SIMULATOR:
+### For playing with the keyboard:
+`./manual_control.py`
 
-## For playing with the joystick
-'./joystick_control.py'
+### For playing with the joystick:
+`./joystick_control.py`
