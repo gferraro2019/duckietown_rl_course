@@ -1,16 +1,25 @@
+#!/usr/bin/env python3
+
+"""
+This script allows you to manually control the simulator or Duckiebot
+using a Logitech Game Controller, as well as record trajectories.
+"""
+
 import argparse
 
 import gym
 import numpy as np
 import pyglet
+from pyglet.window import key
 
 from duckietownrl.gym_duckietown.envs import DuckietownEnv
 from duckietownrl.utils.utils import ReplayBuffer
-from duckietownrl.utils.wrappers import Wrapper, Wrapper_BW
+from duckietownrl.utils.wrappers import Wrapper_BW
+
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--env-name", default=None)
 parser.add_argument("--seed", default=0, type=int)
+parser.add_argument("--env-name", default=None)
 parser.add_argument("--map-name", default="udem1")
 parser.add_argument("--distortion", default=False, action="store_true")
 parser.add_argument(
@@ -36,14 +45,13 @@ if args.env_name is None:
 else:
     env = gym.make(args.env_name)
 
-# Wrappeping
-# env = Wrapper_BW(env)
-# env =, args, BW=True, resize=(120, 160), normalize=False)
-print("Initialized Wrappers")
+# wrapping env
+env = Wrapper_BW(env)
 
-
-env.reset()
+obs = env.reset()
 env.render()
+
+
 replay_buffer = ReplayBuffer(10_000)
 
 

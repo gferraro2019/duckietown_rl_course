@@ -2,6 +2,7 @@ LICENSE
 README.md
 setup.py
 duckietownrl/__init__.py
+duckietownrl/train.py
 duckietownrl.egg-info/PKG-INFO
 duckietownrl.egg-info/SOURCES.txt
 duckietownrl.egg-info/dependency_links.txt
