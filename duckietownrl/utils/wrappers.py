@@ -2,6 +2,7 @@ import gym
 from gym import spaces
 import numpy as np
 
+from duckietownrl.gym_duckietown.envs.duckietown_env import DuckietownEnv
 from duckietownrl.gym_duckietown.simulator import Simulator
 
 
@@ -82,6 +83,35 @@ class ImgWrapper(gym.ObservationWrapper):
 
     def observation(self, observation):
         return observation.transpose(2, 0, 1)
+
+
+import cv2
+
+
+class Wrapper(DuckietownEnv):
+    def __init__(self, env):
+        super().__init__(env.map_name, env.distortion, env.domain_rand, env.max_steps)
+
+    def reset(self):
+        obs = super(DuckietownEnv, self).reset()
+        return self.apply_transformation(obs)
+
+    def apply_transformation(self, img):
+        return img
+
+    def step(self, action):
+        obs = super(DuckietownEnv, self).step(action)
+        img = obs[0]
+        img = self.apply_transformation(img)
+        return (img, *obs[1:])
+
+
+class Wrapper_BW(Wrapper):
+    def __init__(self, env):
+        super().__init__(env)
+
+    def apply_transformation(self, img):
+        return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 
 class DtRewardWrapper(gym.RewardWrapper):
