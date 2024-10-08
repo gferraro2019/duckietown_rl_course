@@ -14,7 +14,7 @@ from pyglet.window import key
 
 from duckietownrl.gym_duckietown.envs import DuckietownEnv
 from duckietownrl.utils.utils import ReplayBuffer
-from duckietownrl.utils.wrappers import Wrapper_BW
+from duckietownrl.utils.wrappers import Wrapper_BW, Wrapper_Resize
 
 
 parser = argparse.ArgumentParser()
@@ -47,11 +47,12 @@ else:
     env = gym.make(args.env_name)
 
 # wrapping env
-env = Wrapper_BW(env)
+env = Wrapper_Resize(env, resize=(120, 160))
+env.append_wrapper(Wrapper_BW(env))
+
 
 obs = env.reset()
 env.render()
-
 
 replay_buffer = ReplayBuffer(10_000)
 

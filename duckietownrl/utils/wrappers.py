@@ -93,13 +93,19 @@ class Wrapper(DuckietownEnv):
         keys_to_keep = ["map_name", "distortion", "domain_rand", "max_steps", "seed"]
         env_to_dict = vars(env)
         kwargs = {k: env_to_dict[k] for k in keys_to_keep if k in env_to_dict}
+        self.wrappers_list = []
         super().__init__(**kwargs)
+
+    def append_wrapper(self, wrapper):
+        self.wrappers_list.append(wrapper)
 
     def reset(self):
         obs = super(DuckietownEnv, self).reset()
         return self.apply_transformation(obs)
 
     def apply_transformation(self, img):
+        for wrapper in self.wrappers_list:
+            img = wrapper.apply_transformation(img)
         return img
 
     def step(self, action):
@@ -114,7 +120,18 @@ class Wrapper_BW(Wrapper):
         super().__init__(env)
 
     def apply_transformation(self, img):
-        return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        return super().apply_transformation(img)
+
+
+class Wrapper_Resize(Wrapper):
+    def __init__(self, env, resize):
+        self.resize = resize
+        super().__init__(env)
+
+    def apply_transformation(self, img):
+        img = cv2.resize(img, self.resize)
+        return super().apply_transformation(img)
 
 
 class DtRewardWrapper(gym.RewardWrapper):
