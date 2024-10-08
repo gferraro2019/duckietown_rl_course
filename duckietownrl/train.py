@@ -6,6 +6,7 @@ using a Logitech Game Controller, as well as record trajectories.
 """
 
 import argparse
+import torch
 
 import gym
 import numpy as np
@@ -20,6 +21,7 @@ from duckietownrl.utils.wrappers import (
     Wrapper_StackObservation,
 )
 
+from duckietownrl.algorithms.sac import SAC
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)
@@ -52,8 +54,9 @@ else:
 
 # wrapping env
 n_frames = 4
+resize = (48, 64)
 env = Wrapper_StackObservation(env, n_frames)
-env.append_wrapper(Wrapper_Resize(env, resize=(120, 160)))
+env.append_wrapper(Wrapper_Resize(env, resize=resize))
 env.append_wrapper(Wrapper_BW(env))
 
 
@@ -61,9 +64,19 @@ env.reset()
 env.render()
 
 # initialize stack
-obs = env.step([0, 0])
+for _ in range(n_frames):
+    obs, _, _, _ = env.step([0, 0])
 
-replay_buffer = ReplayBuffer(10_000)
+# create replay buffer
+batch_size = 64
+replay_buffer = ReplayBuffer(10_000, batch_size)
+
+# define an agent
+state_dim = (n_frames, *resize)  # Shape of state input (4, 84, 84)
+action_dim = 2
+# agent = SAC(state_dim, action_dim)
+agent = SAC("DuckieTown", state_dim, action_dim, replay_buffer=replay_buffer)
+tot_episodes = 0
 
 
 def update(dt):
@@ -72,19 +85,31 @@ def update(dt):
     This function is called at every frame to handle
     movement/stepping and redrawing
     """
-    action = np.random.uniform(low=-1, high=1, size=(2))
+    # action = np.random.uniform(low=-1, high=1, size=(2))
+    action = agent.select_action(torch.tensor(obs, dtype=torch.float32))
 
     next_obs, reward, done, info = env.step(action)
     print("step_count = %s, reward=%.3f" % (env.unwrapped.step_count, sum(reward)))
+
+    replay_buffer.add(obs, next_obs, action, reward, done)
+
+    # Update the agent if the replay buffer has enough samples
+    # if replay_buffer.can_sample():
+    #     agent.update(replay_buffer, batch_size=64)
+    # if np.random.random() < 0.3:
+    agent.train()
+
+    obs = next_obs
+    env.render()
+
+    if tot_episodes % 100 == 0:
+        agent.save("")
 
     if True in done:
         print("done!")
         env.reset()
         env.render()
-
-    replay_buffer.add(obs, next_obs, action, reward, done)
-    obs = next_obs
-    env.render()
+        tot_episode += 1
 
 
 pyglet.clock.schedule_interval(update, 1.0 / env.unwrapped.frame_rate)
