@@ -14,7 +14,11 @@ from pyglet.window import key
 
 from duckietownrl.gym_duckietown.envs import DuckietownEnv
 from duckietownrl.utils.utils import ReplayBuffer
-from duckietownrl.utils.wrappers import Wrapper_BW, Wrapper_Resize
+from duckietownrl.utils.wrappers import (
+    Wrapper_BW,
+    Wrapper_Resize,
+    Wrapper_StackObservation,
+)
 
 
 parser = argparse.ArgumentParser()
@@ -47,12 +51,17 @@ else:
     env = gym.make(args.env_name)
 
 # wrapping env
-env = Wrapper_Resize(env, resize=(120, 160))
+n_frames = 4
+env = Wrapper_StackObservation(env, n_frames)
+env.append_wrapper(Wrapper_Resize(env, resize=(120, 160)))
 env.append_wrapper(Wrapper_BW(env))
 
 
-obs = env.reset()
+env.reset()
 env.render()
+
+# initialize stack
+obs = env.step([0, 0])
 
 replay_buffer = ReplayBuffer(10_000)
 
@@ -66,9 +75,9 @@ def update(dt):
     action = np.random.uniform(low=-1, high=1, size=(2))
 
     next_obs, reward, done, info = env.step(action)
-    print("step_count = %s, reward=%.3f" % (env.unwrapped.step_count, reward))
+    print("step_count = %s, reward=%.3f" % (env.unwrapped.step_count, sum(reward)))
 
-    if done:
+    if True in done:
         print("done!")
         env.reset()
         env.render()

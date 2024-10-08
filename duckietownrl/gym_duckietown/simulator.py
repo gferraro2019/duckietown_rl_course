@@ -378,7 +378,7 @@ class Simulator(gym.Env):
             self.map_names = [mapfile.replace(".yaml", "") for mapfile in self.map_names]
 
         # Initialize the state
-        self.reset()
+        #self.reset()
 
         self.last_action = np.array([0, 0])
         self.wheelVels = np.array([0, 0])

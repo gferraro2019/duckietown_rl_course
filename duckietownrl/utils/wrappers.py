@@ -120,8 +120,7 @@ class Wrapper_BW(Wrapper):
         super().__init__(env)
 
     def apply_transformation(self, img):
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        return super().apply_transformation(img)
+        return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 
 class Wrapper_Resize(Wrapper):
@@ -130,8 +129,55 @@ class Wrapper_Resize(Wrapper):
         super().__init__(env)
 
     def apply_transformation(self, img):
-        img = cv2.resize(img, self.resize)
-        return super().apply_transformation(img)
+        return cv2.resize(img, self.resize)
+
+
+class Wrapper_StackObservation(Wrapper):
+    def __init__(self, env, n_obs):
+        self.n_obs = n_obs
+        self.observations_stack = []
+        self.rewards_stack = []
+        self.dones_stack = []
+        self.infos_stack = []
+
+        super().__init__(env)
+
+    def stack_observation(self, obs):
+        # Append the new image to the stack
+        if isinstance(obs, tuple):
+            next_obs, reward, done, info = obs
+            self.observations_stack.append(next_obs)
+            self.rewards_stack.append(reward)
+            self.dones_stack.append(done)
+            self.infos_stack.append(info)
+
+        # Keep only the last n_obs Observation
+        if len(self.observations_stack) > self.n_obs:
+            self.observations_stack.pop(0)
+            self.rewards_stack.pop(0)
+            self.dones_stack.pop(0)
+            self.infos_stack.pop(0)
+
+    def reset(self):
+        obs = super().reset()
+        for _ in range(self.n_obs):
+            self.stack_observation(obs)
+        return (
+            self.observations_stack,
+            self.rewards_stack,
+            self.dones_stack,
+            self.infos_stack,
+        )
+
+    def step(self, action):
+        obs = super().step(action)
+        self.stack_observation(obs)
+        return (
+            self.observations_stack,
+            self.rewards_stack,
+            self.dones_stack,
+            self.infos_stack,
+        )
 
 
 class DtRewardWrapper(gym.RewardWrapper):
