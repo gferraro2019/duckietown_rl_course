@@ -140,7 +140,7 @@ class SAC:
                 tau * local_param.data + (1 - tau) * target_param.data
             )
 
-    def save_weights(self, episodes):
+    def save(self, episodes):
         torch.save(
             self.policy_network.state_dict(),
             self.env_name + f"_policy_{episodes}_weights.pth",

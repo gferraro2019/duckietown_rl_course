@@ -132,6 +132,14 @@ class Wrapper_Resize(Wrapper):
         return cv2.resize(img, self.resize)
 
 
+class Wrapper_NormalizeImage(Wrapper):
+    def __init__(self, env):
+        super().__init__(env)
+
+    def apply_transformation(self, img):
+        return img / 255.0
+
+
 class Wrapper_StackObservation(Wrapper):
     def __init__(self, env, n_obs):
         self.n_obs = n_obs

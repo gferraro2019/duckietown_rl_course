@@ -17,6 +17,7 @@ from duckietownrl.gym_duckietown.envs import DuckietownEnv
 from duckietownrl.utils.utils import ReplayBuffer
 from duckietownrl.utils.wrappers import (
     Wrapper_BW,
+    Wrapper_NormalizeImage,
     Wrapper_Resize,
     Wrapper_StackObservation,
 )
@@ -58,6 +59,7 @@ resize = (48, 64)
 env = Wrapper_StackObservation(env, n_frames)
 env.append_wrapper(Wrapper_Resize(env, resize=resize))
 env.append_wrapper(Wrapper_BW(env))
+env.append_wrapper(Wrapper_NormalizeImage(env))
 
 
 env.reset()
@@ -81,6 +83,7 @@ tot_episodes = 0
 
 def update(dt):
     global obs
+    global tot_episodes
     """
     This function is called at every frame to handle
     movement/stepping and redrawing
@@ -103,13 +106,13 @@ def update(dt):
     env.render()
 
     if tot_episodes % 100 == 0:
-        agent.save("")
+        agent.save(tot_episodes)
 
     if True in done:
         print("done!")
         env.reset()
         env.render()
-        tot_episode += 1
+        tot_episodes += 1
 
 
 pyglet.clock.schedule_interval(update, 1.0 / env.unwrapped.frame_rate)
