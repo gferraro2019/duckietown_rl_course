@@ -90,7 +90,10 @@ import cv2
 
 class Wrapper(DuckietownEnv):
     def __init__(self, env):
-        super().__init__(env.map_name, env.distortion, env.domain_rand, env.max_steps)
+        keys_to_keep = ["map_name", "distortion", "domain_rand", "max_steps", "seed"]
+        env_to_dict = vars(env)
+        kwargs = {k: env_to_dict[k] for k in keys_to_keep if k in env_to_dict}
+        super().__init__(**kwargs)
 
     def reset(self):
         obs = super(DuckietownEnv, self).reset()

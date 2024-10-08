@@ -20,7 +20,7 @@ from duckietownrl.utils.wrappers import Wrapper_BW
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)
 parser.add_argument("--env-name", default=None)
-parser.add_argument("--map-name", default="udem1")
+parser.add_argument("--map-name", default="small_loop")
 parser.add_argument("--distortion", default=False, action="store_true")
 parser.add_argument(
     "--draw-curve", action="store_true", help="draw the lane following curve"
@@ -41,6 +41,7 @@ if args.env_name is None:
         distortion=args.distortion,
         domain_rand=args.domain_rand,
         max_steps=args.max_steps,
+        seed=args.seed,
     )
 else:
     env = gym.make(args.env_name)
