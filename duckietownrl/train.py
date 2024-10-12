@@ -57,9 +57,9 @@ else:
 
 # wrapping env
 n_frames = 5
-resize = (64, 48)  # (width,height)
+resize_shape = (64, 48)  # (width,height)
 env = Wrapper_StackObservation(env, n_frames)
-env.append_wrapper(Wrapper_Resize(env, resize=resize))
+env.append_wrapper(Wrapper_Resize(env, shape=resize_shape))
 env.append_wrapper(Wrapper_BW(env))
 env.append_wrapper(Wrapper_NormalizeImage(env))
 
@@ -76,7 +76,7 @@ batch_size = 256
 replay_buffer = ReplayBuffer(100_000, batch_size, normalize_rewards=False)
 
 # define an agent
-state_dim = (n_frames, *resize)  # Shape of state input (4, 84, 84)
+state_dim = (n_frames, *resize_shape)  # Shape of state input (4, 84, 84)
 action_dim = 2
 # agent = SAC(state_dim, action_dim)
 agent = SAC("DuckieTown", state_dim, action_dim, replay_buffer=replay_buffer)
