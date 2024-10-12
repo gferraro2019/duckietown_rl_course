@@ -13,7 +13,7 @@ class SAC:
         state_dim,
         action_dim,
         gamma=0.99,
-        alpha=1,
+        alpha=0.5,
         lr=3e-4,
         action_bounds=(-1, 1),
         reward_scale=1,
@@ -73,7 +73,7 @@ class SAC:
         if not self.memory.can_sample():
             return 0, 0, 0
         else:
-
+            print("training...")
             states, actions, rewards, next_states, dones = self.memory.sample()
 
             # Calculating the value target
@@ -120,7 +120,7 @@ class SAC:
             self.soft_update_target_network(
                 self.value_network, self.value_target_network
             )
-
+            print("...done!")
             return (
                 value_loss.item(),
                 0.5 * (q1_loss + q2_loss).item(),
@@ -140,22 +140,38 @@ class SAC:
                 tau * local_param.data + (1 - tau) * target_param.data
             )
 
-    def save(self, episodes):
+    def save(self, folder_name, episodes):
+        import os
+
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+
         torch.save(
             self.policy_network.state_dict(),
-            self.env_name + f"_policy_{episodes}_weights.pth",
+            os.path.join(
+                folder_name, self.env_name + f"_policy_{episodes}_weights.pth"
+            ),
         )
         torch.save(
             self.q_value_network1.state_dict(),
-            self.env_name + f"_qvalue_net1_{episodes}_weights.pth",
+            os.path.join(
+                folder_name,
+                self.env_name + f"_qvalue_net1_{episodes}_weights.pth",
+            ),
         )
         torch.save(
             self.q_value_network2.state_dict(),
-            self.env_name + f"_qvalue_net2_{episodes}_weights.pth",
+            os.path.join(
+                folder_name,
+                self.env_name + f"_qvalue_net2_{episodes}_weights.pth",
+            ),
         )
         torch.save(
             self.value_network.state_dict(),
-            self.env_name + f"_value_net_{episodes}_weights.pth",
+            os.path.join(
+                folder_name,
+                self.env_name + f"_value_net_{episodes}_weights.pth",
+            ),
         )
 
     def load_weights(self):
