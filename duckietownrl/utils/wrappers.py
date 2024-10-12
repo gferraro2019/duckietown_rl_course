@@ -95,9 +95,11 @@ class Wrapper(DuckietownEnv):
         kwargs = {k: env_to_dict[k] for k in keys_to_keep if k in env_to_dict}
         self.wrappers_list = []
         super().__init__(**kwargs)
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
 
     def append_wrapper(self, wrapper):
         self.wrappers_list.append(wrapper)
+        self.observation_space = wrapper.observation_space
 
     def reset(self):
         obs = super(DuckietownEnv, self).reset()
@@ -118,23 +120,56 @@ class Wrapper(DuckietownEnv):
 class Wrapper_BW(Wrapper):
     def __init__(self, env):
         super().__init__(env)
+        if len(env.observation_space.shape) == 4:
+            n_imgs, img_height, img_width, n_channels = env.observation_space.shape
+            self.observation_space = spaces.Box(
+                0,
+                255,
+                (n_imgs, img_height, img_width, 1),
+                dtype=self.observation_space.dtype,
+            )
+        else:
+            img_height, img_width, n_channels = env.observation_space.shape
+            self.observation_space = spaces.Box(
+                0,
+                255,
+                (img_height, img_width, 1),
+                dtype=self.observation_space.dtype,
+            )
 
     def apply_transformation(self, img):
         return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 
 class Wrapper_Resize(Wrapper):
-    def __init__(self, env, resize):
-        self.resize = resize
+    def __init__(self, env, shape):
+        self.shape = shape
         super().__init__(env)
+        if len(env.observation_space.shape) == 4:
+            n_imgs, img_height, img_width, n_channels = env.observation_space.shape
+            self.observation_space = spaces.Box(
+                0,
+                255,
+                (n_imgs, shape[-1], shape[-2], n_channels),
+                dtype=self.observation_space.dtype,
+            )
+        else:
+            img_height, img_width, n_channels = env.observation_space.shape
+            self.observation_space = spaces.Box(
+                0,
+                255,
+                (shape[-1], shape[-2], n_channels),
+                dtype=self.observation_space.dtype,
+            )
 
     def apply_transformation(self, img):
-        return cv2.resize(img, self.resize)
+        return cv2.resize(img, self.shape)
 
 
 class Wrapper_NormalizeImage(Wrapper):
     def __init__(self, env):
         super().__init__(env)
+        self.observation_space = env.observation_space
 
     def apply_transformation(self, img):
         return img / 255.0
@@ -149,6 +184,13 @@ class Wrapper_StackObservation(Wrapper):
         self.infos_stack = []
 
         super().__init__(env)
+        image_height, image_width, channels = self.observation_space.shape
+        self.observation_space = spaces.Box(
+            low=0,
+            high=255,
+            shape=(n_obs, image_height, image_width, channels),
+            dtype=np.uint8,
+        )
 
     def stack_observation(self, obs):
         # Append the new image to the stack
