@@ -16,10 +16,8 @@ from pyglet.window import key
 
 from duckietownrl.gym_duckietown.envs import DuckietownEnv
 
-parser = argparse.ArgumentParser()    
-parser.add_argument(
-        "--seed", default=0, type=int
-    ) 
+parser = argparse.ArgumentParser()
+parser.add_argument("--seed", default=0, type=int)
 parser.add_argument("--env-name", default=None)
 parser.add_argument("--map-name", default="udem1")
 parser.add_argument("--distortion", default=False, action="store_true")
@@ -37,6 +35,7 @@ if args.env_name is None:
         distortion=args.distortion,
         domain_rand=args.domain_rand,
         max_steps=np.inf,
+        seed=args.seed,
     )
 else:
     env = gym.make(args.env_name)
