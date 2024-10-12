@@ -28,6 +28,7 @@ class ReplayBuffer:
         action_shape=(1, 2),
         reward_shape=(1, 1),
         device="cpu",
+        normalize_rewards=False,
     ):
         self.device = device
         # self.content = []
@@ -44,6 +45,7 @@ class ReplayBuffer:
         self.idx = 0
         self.batch_size = batch_size
         self.indices = np.zeros(batch_size)
+        self.normalize_rewards = normalize_rewards
 
         assert self.calculate_memory_allocation()
 
@@ -218,10 +220,17 @@ class ReplayBuffer:
             else:
                 idx = random.sample(range(len(self)), self.batch_size)
             self.indices[:] = idx
+
+            rewards = self.rewards[self.indices].to(device)
+
+            if self.normalize_rewards is True:
+                rewards = (rewards - self.rewards.min()) / (
+                    self.rewards.max() - self.rewards.min()
+                )
             return (
                 self.states_img[self.indices].to(device),
                 self.actions[self.indices].to(device),
-                self.rewards[self.indices].to(device),
+                rewards,
                 self.next_states_img[self.indices].to(device),
                 self.dones[self.indices].to(device),
             )
