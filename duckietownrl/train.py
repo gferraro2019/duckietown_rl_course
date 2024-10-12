@@ -7,6 +7,8 @@ using a Logitech Game Controller, as well as record trajectories.
 
 import argparse
 import torch
+from datetime import datetime
+import os
 
 import gym
 import numpy as np
@@ -54,8 +56,8 @@ else:
     env = gym.make(args.env_name)
 
 # wrapping env
-n_frames = 4
-resize = (48, 64)
+n_frames = 5
+resize = (64, 48)  # (width,height)
 env = Wrapper_StackObservation(env, n_frames)
 env.append_wrapper(Wrapper_Resize(env, resize=resize))
 env.append_wrapper(Wrapper_BW(env))
@@ -70,8 +72,8 @@ for _ in range(n_frames):
     obs, _, _, _ = env.step([0, 0])
 
 # create replay buffer
-batch_size = 64
-replay_buffer = ReplayBuffer(10_000, batch_size)
+batch_size = 256
+replay_buffer = ReplayBuffer(100_000, batch_size, normalize_rewards=False)
 
 # define an agent
 state_dim = (n_frames, *resize)  # Shape of state input (4, 84, 84)
@@ -79,11 +81,17 @@ action_dim = 2
 # agent = SAC(state_dim, action_dim)
 agent = SAC("DuckieTown", state_dim, action_dim, replay_buffer=replay_buffer)
 tot_episodes = 0
+timesteps = 0
+probability_training = 0.3
+
+folder_name = os.path.join("models", f"{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 
 def update(dt):
     global obs
     global tot_episodes
+    global timesteps
+    global probability_training
     """
     This function is called at every frame to handle
     movement/stepping and redrawing
@@ -99,20 +107,22 @@ def update(dt):
     # Update the agent if the replay buffer has enough samples
     # if replay_buffer.can_sample():
     #     agent.update(replay_buffer, batch_size=64)
-    # if np.random.random() < 0.3:
-    agent.train()
+    if np.random.random() < probability_training:
+        agent.train()
 
     obs = next_obs
     env.render()
 
-    if tot_episodes % 100 == 0:
-        agent.save(tot_episodes)
+    if tot_episodes > 0 and tot_episodes % 100 == 0:
+        agent.save(folder_name, tot_episodes)
 
     if True in done:
         print("done!")
         env.reset()
         env.render()
         tot_episodes += 1
+
+    timesteps += 1
 
 
 pyglet.clock.schedule_interval(update, 1.0 / env.unwrapped.frame_rate)
