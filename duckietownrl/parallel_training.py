@@ -4,8 +4,12 @@ import torch
 from datetime import datetime
 import os
 
+import gym
+
 import numpy as np
 import pyglet
+from pyglet.window import key  # do not remove, otherwhise render issue
+
 
 from duckietownrl.gym_duckietown.envs import DuckietownEnv
 from duckietownrl.utils.utils import ReplayBuffer
