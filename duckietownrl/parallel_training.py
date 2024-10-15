@@ -42,7 +42,7 @@ args = parser.parse_args()
 
 
 n_frames = 4
-n_envs = 4
+n_envs = 100
 resize_shape = (64, 48)  # (width,height)
 envs = []
 for _ in range(n_envs):
@@ -61,23 +61,28 @@ for _ in range(n_envs):
     env.append_wrapper(Wrapper_NormalizeImage(env))
 
     env.reset()
-    env.render()
+    env.render(mode="rgb_array")
 
     # initialize stack
     for _ in range(n_frames):
         obs, _, _, _ = env.step([0, 0])
-        env.render()
+        # env.render()
 
     envs.append(env)
 
-obs = np.concatenate([obs, obs, obs, obs], axis=0)
+
+# assemble first obervation
+l_obs = []
+for _ in envs:
+    l_obs.append(obs)
+obs = np.stack(l_obs, axis=0)
 
 # create replay buffer
 batch_size = 256
-replay_buffer = ReplayBuffer(100_000, batch_size, normalize_rewards=False)
+replay_buffer = ReplayBuffer(25_000, batch_size, normalize_rewards=False)
 
 # define an agent
-state_dim = (n_envs * n_frames, *resize_shape)  # Shape of state input (4, 84, 84)
+state_dim = (n_frames, *resize_shape)  # Shape of state input (4, 84, 84)
 action_dim = 2
 agent = SAC(
     "DuckieTown",
@@ -87,7 +92,7 @@ agent = SAC(
 )
 tot_episodes = 0
 timesteps = 0
-probability_training = 0.3
+probability_training = 0.66
 
 folder_name = os.path.join("models", f"{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
@@ -107,24 +112,26 @@ def update(dt):
 
     # action = np.random.uniform(low=-1, high=1, size=(2))
     action = agent.select_action(torch.tensor(obs, dtype=torch.float32))
+    noise = np.random.randint(-300, 300, (n_envs, 2)) * 0.0001
+    noisy_action = action + noise
 
     # add noise to actions
-    action += np.random.normal(0, 0.1, action.shape)
-    for env in envs:
-        next_obs, reward, done, info = env.step(action)
+    for i, env in enumerate(envs):
+        next_obs, reward, done, info = env.step(noisy_action[i])
         next_observations.append(next_obs)
         rewards.append(reward)
         dones.append(done)
 
-    next_obs = np.concatenate(next_observations, axis=0)
-    reward = np.concatenate(rewards, axis=0)
-    done = np.concatenate(dones, axis=0)
+    next_obs = np.stack(next_observations, axis=0)
+    reward = np.stack(rewards, axis=0)
+    done = np.stack(dones, axis=0)
+    action = noisy_action
 
     next_observations.clear()
     rewards.clear()
     dones.clear()
 
-    print("step_count = %s, reward=%.3f" % (env.unwrapped.step_count, sum(reward)))
+    print(f"step_count = {env.unwrapped.step_count}, rewards={reward.sum(0)/n_envs}")
 
     replay_buffer.add(obs, next_obs, action, reward, done)
 
@@ -134,8 +141,8 @@ def update(dt):
 
     obs = next_obs
 
-    for env in envs:
-        env.render()
+    for env in envs[-2:]:
+        env.render(mode="human")
 
     if tot_episodes > 0 and tot_episodes % 100 == 0:
         agent.save(folder_name, tot_episodes)
@@ -145,8 +152,9 @@ def update(dt):
         id_env = idx % n_envs
         env = envs[id_env]
         print(f"env N.{id_env} done!")
-        env.reset()
-        env.render()
+        obs_env = env.reset()
+        obs[id_env] = np.stack(obs_env[0], axis=0)
+        # env.render()
         tot_episodes += 1
 
     timesteps += 1

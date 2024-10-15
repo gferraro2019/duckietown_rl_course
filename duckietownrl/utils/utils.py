@@ -81,10 +81,7 @@ class ReplayBuffer:
         if len(self) < self.capacity:
             # self.content.append(observation)
             temp_tensor = (
-                torch.tensor(obs, dtype=torch.float32)
-                .detach()
-                .unsqueeze(0)
-                .to(self.device)
+                torch.tensor(obs, dtype=torch.float32).detach().to(self.device)
             )
             self.states_img = torch.cat(
                 [
@@ -96,10 +93,7 @@ class ReplayBuffer:
             del temp_tensor
 
             temp_tensor = (
-                torch.tensor(actions, dtype=torch.float32)
-                .detach()
-                .unsqueeze(0)
-                .to(self.device)
+                torch.tensor(actions, dtype=torch.float32).detach().to(self.device)
             )
             self.actions = torch.cat(
                 [
@@ -111,10 +105,7 @@ class ReplayBuffer:
             del temp_tensor
 
             temp_tensor = (
-                torch.tensor(rewards, dtype=torch.float32)
-                .detach()
-                .unsqueeze(0)
-                .to(self.device)
+                torch.tensor(rewards, dtype=torch.float32).detach().to(self.device)
             )
             self.rewards = torch.cat(
                 [
@@ -126,10 +117,7 @@ class ReplayBuffer:
             del temp_tensor
 
             temp_tensor = (
-                torch.tensor(next_obs, dtype=torch.float32)
-                .detach()
-                .unsqueeze(0)
-                .to(self.device)
+                torch.tensor(next_obs, dtype=torch.float32).detach().to(self.device)
             )
             self.next_states_img = torch.cat(
                 [
@@ -140,10 +128,7 @@ class ReplayBuffer:
             )
             del temp_tensor
             temp_tensor = (
-                torch.tensor(dones, dtype=torch.float32)
-                .detach()
-                .unsqueeze(0)
-                .to(self.device)
+                torch.tensor(dones, dtype=torch.float32).detach().to(self.device)
             )
             self.dones = torch.cat(
                 [
@@ -157,46 +142,31 @@ class ReplayBuffer:
             # self.content[self.idx] = observation
 
             temp_tensor = (
-                torch.tensor(obs, dtype=torch.float32)
-                .detach()
-                .unsqueeze(0)
-                .to(self.device)
+                torch.tensor(obs, dtype=torch.float32).detach().to(self.device)
             )
             self.states_img[self.idx] = temp_tensor
             del temp_tensor
 
             temp_tensor = (
-                torch.tensor(actions, dtype=torch.float32)
-                .detach()
-                .unsqueeze(0)
-                .to(self.device)
+                torch.tensor(actions, dtype=torch.float32).detach().to(self.device)
             )
             self.actions[self.idx] = temp_tensor
             del temp_tensor
 
             temp_tensor = (
-                torch.tensor(rewards, dtype=torch.float32)
-                .detach()
-                .unsqueeze(0)
-                .to(self.device)
+                torch.tensor(rewards, dtype=torch.float32).detach().to(self.device)
             )
             self.rewards[self.idx] = temp_tensor
             del temp_tensor
 
             temp_tensor = (
-                torch.tensor(next_obs, dtype=torch.float32)
-                .detach()
-                .unsqueeze(0)
-                .to(self.device)
+                torch.tensor(next_obs, dtype=torch.float32).detach().to(self.device)
             )
             self.next_states_img[self.idx] = temp_tensor
             del temp_tensor
 
             temp_tensor = (
-                torch.tensor(dones, dtype=torch.float32)
-                .detach()
-                .unsqueeze(0)
-                .to(self.device)
+                torch.tensor(dones, dtype=torch.float32).detach().to(self.device)
             )
             self.dones[self.idx] = temp_tensor
             del temp_tensor
