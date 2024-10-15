@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 import gym
-
+import pickle
 import numpy as np
 import pyglet
 from pyglet.window import key  # do not remove, otherwhise render issue
@@ -39,6 +39,16 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
+
+
+def load_replay_buffer(filename="replay_buffer"):
+    print("loading replay buffer...")
+    file = open(filename, "rb")
+    replay_buffer = pickle.load(file)
+    file.close()
+    print("Done")
+    print(len(replay_buffer))
+    return replay_buffer
 
 
 n_frames = 4
@@ -79,7 +89,8 @@ obs = np.stack(l_obs, axis=0)
 
 # create replay buffer
 batch_size = 256
-replay_buffer = ReplayBuffer(25_000, batch_size, normalize_rewards=False)
+# replay_buffer = ReplayBuffer(25_000, batch_size, normalize_rewards=False)
+replay_buffer = load_replay_buffer()
 
 # define an agent
 state_dim = (n_frames, *resize_shape)  # Shape of state input (4, 84, 84)
