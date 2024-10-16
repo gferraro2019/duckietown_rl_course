@@ -201,6 +201,14 @@ class Wrapper_StackObservation(Wrapper):
             self.dones_stack.append(done)
             self.infos_stack.append(info)
 
+        # Append the new image to the stack
+        elif isinstance(obs, np.ndarray):
+            next_obs, reward, done, info = obs, 0, False, None
+            self.observations_stack.append(next_obs)
+            self.rewards_stack.append(reward)
+            self.dones_stack.append(done)
+            self.infos_stack.append(info)
+
         # Keep only the last n_obs Observation
         if len(self.observations_stack) > self.n_obs:
             self.observations_stack.pop(0)
