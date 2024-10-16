@@ -7,6 +7,16 @@ import os
 import pickle
 
 
+def load_replay_buffer(filename="replay_buffer"):
+    print("loading replay buffer...")
+    file = open(filename, "rb")
+    replay_buffer = pickle.load(file)
+    file.close()
+    print("Done")
+    print(len(replay_buffer))
+    return replay_buffer
+
+
 def seed(seed):
     torch.manual_seed(seed)
     np.random.seed(seed)

@@ -12,7 +12,7 @@ from pyglet.window import key  # do not remove, otherwhise render issue
 
 
 from duckietownrl.gym_duckietown.envs import DuckietownEnv
-from duckietownrl.utils.utils import ReplayBuffer
+from duckietownrl.utils.utils import ReplayBuffer, load_replay_buffer
 from duckietownrl.utils.wrappers import (
     Wrapper_BW,
     Wrapper_NormalizeImage,
@@ -41,29 +41,20 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-def load_replay_buffer(filename="replay_buffer"):
-    print("loading replay buffer...")
-    file = open(filename, "rb")
-    replay_buffer = pickle.load(file)
-    file.close()
-    print("Done")
-    print(len(replay_buffer))
-    return replay_buffer
-
-
 n_frames = 4
 n_envs = 100
 resize_shape = (64, 48)  # (width,height)
 envs = []
+k = 0
 for _ in range(n_envs):
     env = DuckietownEnv(
         map_name=args.map_name,
         distortion=args.distortion,
         domain_rand=args.domain_rand,
         max_steps=args.max_steps,
-        seed=args.seed,
+        seed=args.seed + k,
     )
-
+    k += 1
     # wrapping the environment
     env = Wrapper_StackObservation(env, n_frames)
     env.append_wrapper(Wrapper_Resize(env, shape=resize_shape))
@@ -72,25 +63,21 @@ for _ in range(n_envs):
 
     env.reset()
     env.render(mode="rgb_array")
-
-    # initialize stack
-    for _ in range(n_frames):
-        obs, _, _, _ = env.step([0, 0])
-        # env.render()
-
     envs.append(env)
 
 
 # assemble first obervation
 l_obs = []
+obs, _, _, _ = env.step([0, 0])
+
 for _ in envs:
     l_obs.append(obs)
 obs = np.stack(l_obs, axis=0)
 
 # create replay buffer
 batch_size = 256
-# replay_buffer = ReplayBuffer(25_000, batch_size, normalize_rewards=False)
-replay_buffer = load_replay_buffer()
+replay_buffer = ReplayBuffer(25_000, batch_size, normalize_rewards=False)
+# replay_buffer = load_replay_buffer()
 
 # define an agent
 state_dim = (n_frames, *resize_shape)  # Shape of state input (4, 84, 84)
@@ -104,8 +91,10 @@ agent = SAC(
 tot_episodes = 0
 timesteps = 0
 probability_training = 0.66
+save_on_episodes = 200
 
 folder_name = os.path.join("models", f"{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+path = "/media/g.ferraro/DONNEES"
 
 
 def update(dt):
@@ -123,12 +112,13 @@ def update(dt):
 
     # action = np.random.uniform(low=-1, high=1, size=(2))
     action = agent.select_action(torch.tensor(obs, dtype=torch.float32))
-    noise = np.random.randint(-300, 300, (n_envs, 2)) * 0.0001
-    noisy_action = action + noise
+    # noise = np.random.randint(-300, 300, (n_envs, 2)) * 0.0001
+    # noisy_action = action + noise
 
     # add noise to actions
     for i, env in enumerate(envs):
-        next_obs, reward, done, info = env.step(noisy_action[i])
+        # next_obs, reward, done, info = env.step(noisy_action[i])
+        next_obs, reward, done, info = env.step(action[i])
         next_observations.append(next_obs)
         rewards.append(reward)
         dones.append(done)
@@ -136,7 +126,7 @@ def update(dt):
     next_obs = np.stack(next_observations, axis=0)
     reward = np.stack(rewards, axis=0)
     done = np.stack(dones, axis=0)
-    action = noisy_action
+    # action = noisy_action
 
     next_observations.clear()
     rewards.clear()
@@ -155,8 +145,8 @@ def update(dt):
     for env in envs[-2:]:
         env.render(mode="human")
 
-    if tot_episodes > 0 and tot_episodes % 100 == 0:
-        agent.save(folder_name, tot_episodes)
+    if tot_episodes > 0 and tot_episodes % save_on_episodes == 0:
+        agent.save(path, folder_name, tot_episodes)
 
     if True in done:
         idx = np.argmax(done)

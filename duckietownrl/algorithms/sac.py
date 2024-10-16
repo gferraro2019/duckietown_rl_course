@@ -141,36 +141,35 @@ class SAC:
                 tau * local_param.data + (1 - tau) * target_param.data
             )
 
-    def save(self, folder_name, episodes):
+    def save(self, path, folder_name, episodes):
         import os
 
-        if not os.path.exists(folder_name):
-            os.makedirs(folder_name)
+        file_path = op.join(path, folder_name)
+        if not os.path.exists(file_path):
+            os.makedirs(file_path)
 
         torch.save(
             self.policy_network.state_dict(),
-            os.path.join(
-                folder_name, self.env_name + f"_policy_{episodes}_weights.pth"
-            ),
+            os.path.join(file_path, self.env_name + f"_policy_{episodes}_weights.pth"),
         )
         torch.save(
             self.q_value_network1.state_dict(),
             os.path.join(
-                folder_name,
+                file_path,
                 self.env_name + f"_qvalue_net1_{episodes}_weights.pth",
             ),
         )
         torch.save(
             self.q_value_network2.state_dict(),
             os.path.join(
-                folder_name,
+                file_path,
                 self.env_name + f"_qvalue_net2_{episodes}_weights.pth",
             ),
         )
         torch.save(
             self.value_network.state_dict(),
             os.path.join(
-                folder_name,
+                file_path,
                 self.env_name + f"_value_net_{episodes}_weights.pth",
             ),
         )
