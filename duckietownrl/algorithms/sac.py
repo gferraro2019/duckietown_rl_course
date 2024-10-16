@@ -2,6 +2,7 @@ import numpy as np
 from duckietownrl.algorithms.model import PolicyNetwork, QvalueNetwork, ValueNetwork
 import torch
 
+import os.path as op
 from torch import from_numpy
 from torch.optim.adam import Adam
 
@@ -174,8 +175,16 @@ class SAC:
             ),
         )
 
-    def load_weights(self):
-        self.policy_network.load_state_dict(torch.load(self.env_name + "_weights.pth"))
+    def load_weights(self, folder_name, n_episodes):
+        self.policy_network.load_state_dict(
+            torch.load(
+                op.join(
+                    "models",
+                    folder_name,
+                    self.env_name + "_policy_" + str(n_episodes) + "_weights.pth",
+                )
+            )
+        )
 
     def set_to_eval_mode(self):
         self.policy_network.eval()
