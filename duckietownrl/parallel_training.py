@@ -43,8 +43,8 @@ args = parser.parse_args()
 
 
 n_frames = 4
-n_envs = 100
-resize_shape = (64, 48)  # (width,height)
+n_envs = 2
+resize_shape = (32, 24)  # (width,height)
 envs = []
 k = 0
 for _ in range(n_envs):
@@ -132,7 +132,9 @@ def update(dt):
     rewards.clear()
     dones.clear()
 
-    print(f"step_count = {env.unwrapped.step_count}, rewards={reward.sum(0)/n_envs}")
+    print(
+        f"eps = {tot_episodes} step_count = {timesteps}, rewards={reward.sum(0)/n_envs}"
+    )
 
     replay_buffer.add(obs, next_obs, action, reward, done)
 

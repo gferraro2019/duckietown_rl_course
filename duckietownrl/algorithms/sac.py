@@ -2,12 +2,6 @@ import numpy as np
 
 from duckietownrl.algorithms.model import PolicyNetwork, QvalueNetwork, ValueNetwork
 
-# from duckietownrl.algorithms.model_3dconv import (
-#     PolicyNetwork,
-#     QvalueNetwork,
-#     ValueNetwork,
-# )
-
 import torch
 
 import os.path as op
