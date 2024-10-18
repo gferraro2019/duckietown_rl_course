@@ -3,6 +3,7 @@ import argparse
 import torch
 from datetime import datetime
 import os
+import time
 
 import gym
 import pickle
@@ -78,6 +79,7 @@ for _ in range(n_frames):
 
 # create replay buffer
 batch_size = 256
+
 # define an agent
 state_dim = (n_frames, *resize_shape)  # Shape of state input (4, 84, 84)
 action_dim = 2
@@ -90,14 +92,14 @@ agent = SAC(
 # set the agent in evaluate mode
 agent.set_to_eval_mode()
 
+folder_name = "20241017_142632"
+path = "/media/g.ferraro/DONNEES"
+
 # load model
-agent.load_weights("20241015_155528", 8000)
+agent.load_weights(path, folder_name, 123)
 
 tot_episodes = 0
 timesteps = 0
-probability_training = 0.66
-
-folder_name = os.path.join("models", f"{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 
 def update(dt):
@@ -110,12 +112,8 @@ def update(dt):
     movement/stepping and redrawing
     """
 
-    # action = np.random.uniform(low=-1, high=1, size=(2))
     action = agent.select_action(torch.tensor(obs, dtype=torch.float32))
-    noise = np.random.randint(-300, 300, 2) * 0.0001
-    noisy_action = action + noise
-
-    next_obs, reward, done, info = env.step(noisy_action)
+    next_obs, reward, done, info = env.step(action)
 
     print(f"step_count = {env.unwrapped.step_count}, rewards={sum(reward)}")
 
@@ -130,9 +128,9 @@ def update(dt):
     timesteps += 1
 
 
-pyglet.clock.schedule_interval(update, 1.0 / env.unwrapped.frame_rate)
-
-# Enter main event loop
-pyglet.app.run()
-
-env.close()
+dt = 0.01
+t = time.time()
+while True:
+    if time.time() - t > dt:
+        update(dt)
+        t = time.time()
