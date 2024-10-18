@@ -3,6 +3,7 @@ import argparse
 import torch
 from datetime import datetime
 import os
+import time
 
 import gym
 import pickle
@@ -110,7 +111,6 @@ def update(dt):
     rewards = []
     dones = []
 
-    # action = np.random.uniform(low=-1, high=1, size=(2))
     action = agent.select_action(torch.tensor(obs, dtype=torch.float32))
     # noise = np.random.randint(-300, 300, (n_envs, 2)) * 0.0001
     # noisy_action = action + noise
@@ -149,21 +149,22 @@ def update(dt):
         agent.save(path, folder_name, tot_episodes)
 
     if True in done:
-        idx = np.argmax(done)
-        id_env = idx % n_envs
-        env = envs[id_env]
-        print(f"env N.{id_env} done!")
-        obs_env = env.reset()
-        obs[id_env] = np.stack(obs_env[0], axis=0)
-        # env.render()
-        tot_episodes += 1
+        idx = np.where(np.any(done, axis=1))[0]
+        idx_envs = idx % n_envs
+        for id in idx_envs:
+            env = envs[id]
+            print(f"env N.{id} done!")
+            obs_env = env.reset()
+            obs[id] = np.stack(obs_env[0], axis=0)
+            # env.render()
+            tot_episodes += 1
 
     timesteps += 1
 
 
-pyglet.clock.schedule_interval(update, 1.0 / env.unwrapped.frame_rate)
-
-# Enter main event loop
-pyglet.app.run()
-
-env.close()
+dt = 0.001
+t = time.time()
+while True:
+    if time.time() - t > dt:
+        update(dt)
+        t = time.time()
