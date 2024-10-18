@@ -1,5 +1,13 @@
 import numpy as np
+
 from duckietownrl.algorithms.model import PolicyNetwork, QvalueNetwork, ValueNetwork
+
+# from duckietownrl.algorithms.model_3dconv import (
+#     PolicyNetwork,
+#     QvalueNetwork,
+#     ValueNetwork,
+# )
+
 import torch
 
 import os.path as op
@@ -174,10 +182,11 @@ class SAC:
             ),
         )
 
-    def load_weights(self, folder_name, n_episodes):
+    def load_weights(self, path, folder_name, n_episodes):
         self.policy_network.load_state_dict(
             torch.load(
                 op.join(
+                    path,
                     "models",
                     folder_name,
                     self.env_name + "_policy_" + str(n_episodes) + "_weights.pth",
