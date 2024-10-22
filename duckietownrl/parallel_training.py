@@ -43,7 +43,7 @@ args = parser.parse_args()
 
 
 n_frames = 4
-n_envs = 2
+n_envs = 10
 resize_shape = (32, 24)  # (width,height)
 envs = []
 k = 0
@@ -69,7 +69,7 @@ for _ in range(n_envs):
 
 # assemble first obervation
 l_obs = []
-obs, _, _, _ = env.step([0, 0])
+obs, _, _, _ = env.step(np.array([0, 0], dtype=np.float32))
 
 for _ in envs:
     l_obs.append(obs)
@@ -77,7 +77,9 @@ obs = np.stack(l_obs, axis=0)
 
 # create replay buffer
 batch_size = 256
-replay_buffer = ReplayBuffer(25_000, batch_size, normalize_rewards=False)
+replay_buffer = ReplayBuffer(
+    n_envs * 26, batch_size, normalize_rewards=False, device="cpu"
+)
 # replay_buffer = load_replay_buffer()
 
 # define an agent
@@ -88,6 +90,7 @@ agent = SAC(
     state_dim,  # envs[0].observation_space.shape[:3],
     envs[0].action_space.shape[0],
     replay_buffer=replay_buffer,
+    device="cpu",
 )
 tot_episodes = 0
 timesteps = 0
