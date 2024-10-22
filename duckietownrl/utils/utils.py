@@ -93,6 +93,8 @@ class ReplayBuffer:
             temp_tensor = (
                 torch.tensor(obs, dtype=torch.float32).detach().to(self.device)
             )
+            size_sample = temp_tensor.shape[0]
+
             self.states_img = torch.cat(
                 [
                     self.states_img,
@@ -158,9 +160,7 @@ class ReplayBuffer:
             if self.idx + size_sample < self.capacity:
                 interval[1] = self.idx + size_sample
             else:
-                diff = self.idx + size_sample - self.capacity
-                interval[0] = self.idx + size_sample
-                interval[1] = diff
+                interval[1] = None  # size_sample + interval[0]
 
             self.states_img[interval[0] : interval[1]] = temp_tensor
             del temp_tensor
@@ -189,7 +189,7 @@ class ReplayBuffer:
             self.dones[interval[0] : interval[1]] = temp_tensor
             del temp_tensor
 
-        self.idx = (self.idx + 1) % self.capacity
+        self.idx = (self.idx + size_sample) % self.capacity
 
     def can_sample(self):
         res = False
