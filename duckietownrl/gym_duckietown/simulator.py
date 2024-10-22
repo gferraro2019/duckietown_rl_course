@@ -402,7 +402,8 @@ class Simulator(gym.Env):
 
         # Initialize the state
         # self.reset()
-
+        self.x = 0
+        self.y = 0
         self.last_action = np.array([0, 0])
         self.wheelVels = np.array([0, 0])
 
@@ -1763,14 +1764,42 @@ class Simulator(gym.Env):
         except NotInLane:
             reward = 40 * col_penalty
         else:
-            timestep_cost = 0.3
+            timestep_cost = 0
             # Compute the reward
-            reward = (
-                +1.0 * speed * lp.dot_dir
-                + -10 * np.abs(lp.dist)
-                + +40 * col_penalty
-                - timestep_cost
-            )
+
+            x, z, y = pos
+            y1 = 0.05
+            y2 = 0.4
+            y3 = 1.43
+            y4 = 1.65
+            x1 = 0.05
+            x2 = 0.4
+            x3 = 1.43
+            x4 = 1.65
+            reward = -1
+            if y1 <= y and y <= y2:
+                if x < self.x:
+                    reward = speed  # * lp.dot_dir
+            elif y3 <= y and y <= y4:
+                if x > self.x:
+                    reward = speed  # * lp.dot_dir
+
+            elif x1 <= x and x <= x2:
+                if y > self.y:
+                    reward = speed  # * lp.dot_dir
+
+            elif x3 <= x and x <= x4:
+                if y < self.y:
+                    reward = speed  # * lp.dot_dir
+
+            # reward = (
+            #     +1.0 * speed * lp.dot_dir
+            #     + -10 * np.abs(lp.dist)
+            #     + +40 * col_penalty
+            #     - timestep_cost
+            # )
+            self.x = x
+            self.y = y
         return reward
 
     def step(self, action: np.ndarray):
@@ -1809,7 +1838,7 @@ class Simulator(gym.Env):
             done_code = "max-steps-reached"
         else:
             done = False
-            reward = self.compute_reward(self.cur_pos, self.cur_angle, self.robot_speed)
+            reward = self.compute_reward(self.cur_pos, self.cur_angle, self.speed)
             msg = ""
             done_code = "in-progress"
         return DoneRewardInfo(
