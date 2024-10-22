@@ -21,6 +21,7 @@ class SAC:
         action_bounds=(-1, 1),
         reward_scale=1,
         replay_buffer=None,
+        device="cpu",
     ):
         self.env_name = env_name
         self.state_dim = state_dim
@@ -32,7 +33,7 @@ class SAC:
         self.reward_scale = reward_scale
         self.memory = replay_buffer
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
 
         self.policy_network = PolicyNetwork(
             state_dim=self.state_dim,
