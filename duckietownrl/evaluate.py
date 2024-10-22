@@ -53,7 +53,7 @@ def load_replay_buffer(filename="replay_buffer"):
 
 
 n_frames = 4
-resize_shape = (64, 48)  # (width,height)
+resize_shape = (32, 24)  # (width,height)
 envs = []
 env = DuckietownEnv(
     map_name=args.map_name,
@@ -92,11 +92,11 @@ agent = SAC(
 # set the agent in evaluate mode
 agent.set_to_eval_mode()
 
-folder_name = "20241017_142632"
+folder_name = "20241018_175853"
 path = "/media/g.ferraro/DONNEES"
 
 # load model
-agent.load_weights(path, folder_name, 123)
+agent.load_weights(path, folder_name, 2600)
 
 tot_episodes = 0
 timesteps = 0
