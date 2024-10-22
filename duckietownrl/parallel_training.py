@@ -21,7 +21,7 @@ from duckietownrl.utils.wrappers import (
     Wrapper_StackObservation,
 )
 
-from duckietownrl.algorithms.sac import SAC
+from duckietownrl.algorithms.sac_3dconv import SAC
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)
@@ -43,7 +43,7 @@ args = parser.parse_args()
 
 
 n_frames = 4
-n_envs = 10
+n_envs = 100
 resize_shape = (32, 24)  # (width,height)
 envs = []
 k = 0
@@ -78,7 +78,7 @@ obs = np.stack(l_obs, axis=0)
 # create replay buffer
 batch_size = 256
 replay_buffer = ReplayBuffer(
-    n_envs * 26, batch_size, normalize_rewards=False, device="cpu"
+    n_envs * 300, batch_size, normalize_rewards=False, device="cpu"
 )
 # replay_buffer = load_replay_buffer()
 
@@ -143,7 +143,7 @@ def update(dt):
 
     # Train with a certain probability for computing efficiency
     if np.random.random() < probability_training:
-        agent.train()
+        agent.train(timesteps)
 
     obs = next_obs
 

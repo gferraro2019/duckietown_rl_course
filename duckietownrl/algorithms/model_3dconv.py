@@ -153,7 +153,7 @@ class PolicyNetwork(nn.Module):
         dist = Normal(mu, std)
         return dist
 
-    def sample_or_likelihood(self, states):
+    def get_action(self, states):
         dist = self(states)
         u = dist.rsample()
         action = torch.tanh(u)
