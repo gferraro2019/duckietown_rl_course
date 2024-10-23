@@ -172,11 +172,13 @@ DEFAULT_FRAME_SKIP = 1
 
 DEFAULT_ACCEPT_START_ANGLE_DEG = 60
 
-REWARD_INVALID_POSE = -1000
+REWARD_INVALID_POSE = -100
 
 MAX_SPAWN_ATTEMPTS = 5000
 
 LanePosition0 = namedtuple("LanePosition", "dist dot_dir angle_deg angle_rad")
+
+logger.setLevel("WARNING")
 
 
 class LanePosition(LanePosition0):
@@ -223,6 +225,8 @@ class Simulator(gym.Env):
         frame_skip: bool = DEFAULT_FRAME_SKIP,
         camera_width: int = DEFAULT_CAMERA_WIDTH,
         camera_height: int = DEFAULT_CAMERA_HEIGHT,
+        window_width=WINDOW_WIDTH,
+        window_height=WINDOW_HEIGHT,
         robot_speed: float = DEFAULT_ROBOT_SPEED,
         accept_start_angle_deg=DEFAULT_ACCEPT_START_ANGLE_DEG,
         full_transparency: bool = False,
@@ -269,6 +273,9 @@ class Simulator(gym.Env):
             information=information,
             nvidia_around=os.path.exists("/proc/driver/nvidia/version"),
         )
+
+        self.window_width = window_width
+        self.window_height = window_height
 
         # first initialize the RNG
         self.seed_value = seed
@@ -340,7 +347,7 @@ class Simulator(gym.Env):
 
         # For displaying text
         self.text_label = pyglet.text.Label(
-            font_name="Arial", font_size=14, x=5, y=WINDOW_HEIGHT - 19
+            font_name="Arial", font_size=14, x=5, y=self.window_height - 19
         )
 
         # Create a frame buffer object for the observation
@@ -353,12 +360,12 @@ class Simulator(gym.Env):
 
         # Create a frame buffer object for human rendering
         self.multi_fbo_human, self.final_fbo_human = create_frame_buffers(
-            WINDOW_WIDTH, WINDOW_HEIGHT, 4
+            self.window_width, self.window_height, 4
         )
 
         # Array to render the image into (for human rendering)
         self.img_array_human = np.zeros(
-            shape=(WINDOW_HEIGHT, WINDOW_WIDTH, 3), dtype=np.uint8
+            shape=(self.window_height, self.window_width, 3), dtype=np.uint8
         )
 
         # allowed angle in lane for starting position
@@ -1779,18 +1786,18 @@ class Simulator(gym.Env):
             reward = -1
             if y1 <= y and y <= y2:
                 if x < self.x:
-                    reward = speed  # * lp.dot_dir
+                    reward = speed
             elif y3 <= y and y <= y4:
                 if x > self.x:
-                    reward = speed  # * lp.dot_dir
+                    reward = speed
 
             elif x1 <= x and x <= x2:
                 if y > self.y:
-                    reward = speed  # * lp.dot_dir
+                    reward = speed
 
             elif x3 <= x and x <= x4:
                 if y < self.y:
-                    reward = speed  # * lp.dot_dir
+                    reward = speed
 
             # reward = (
             #     +1.0 * speed * lp.dot_dir
@@ -1800,7 +1807,7 @@ class Simulator(gym.Env):
             # )
             self.x = x
             self.y = y
-        return reward
+        return reward * lp.dot_dir
 
     def step(self, action: np.ndarray):
         action = np.clip(action, -1, 1)
@@ -2157,8 +2164,8 @@ class Simulator(gym.Env):
         top_down = mode == "top_down"
         # Render the image
         img = self._render_img(
-            WINDOW_WIDTH,
-            WINDOW_HEIGHT,
+            self.window_width,
+            self.window_height,
             self.multi_fbo_human,
             self.final_fbo_human,
             self.img_array_human,
@@ -2176,7 +2183,10 @@ class Simulator(gym.Env):
         if self.window is None:
             config = gl.Config(double_buffer=False)
             self.window = window.Window(
-                width=WINDOW_WIDTH, height=WINDOW_HEIGHT, resizable=False, config=config
+                width=self.window_width,
+                height=self.window_height,
+                resizable=False,
+                config=config,
             )
 
         self.window.clear()
@@ -2191,7 +2201,7 @@ class Simulator(gym.Env):
         gl.glLoadIdentity()
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
-        gl.glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, 0, 10)
+        gl.glOrtho(0, self.window_width, 0, self.window_height, 0, 10)
 
         # Draw the image to the rendering window
         width = img.shape[1]
@@ -2204,7 +2214,7 @@ class Simulator(gym.Env):
             img.ctypes.data_as(POINTER(gl.GLubyte)),
             pitch=width * 3,
         )
-        img_data.blit(0, 0, 0, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
+        img_data.blit(0, 0, 0, width=self.window_width, height=self.window_height)
 
         # Display position/state information
         if mode != "free_cam":

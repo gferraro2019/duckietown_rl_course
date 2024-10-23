@@ -21,7 +21,7 @@ from duckietownrl.utils.wrappers import (
     Wrapper_StackObservation,
 )
 
-from duckietownrl.algorithms.sac_3dconv import SAC
+from duckietownrl.algorithms.sac_3dconv_cleanrl import SAC
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)
@@ -43,7 +43,7 @@ args = parser.parse_args()
 
 
 n_frames = 4
-n_envs = 100
+n_envs = 200
 resize_shape = (32, 24)  # (width,height)
 envs = []
 k = 0
@@ -54,11 +54,15 @@ for _ in range(n_envs):
         domain_rand=args.domain_rand,
         max_steps=args.max_steps,
         seed=args.seed + k,
+        camera_width=resize_shape[0],
+        camera_height=resize_shape[1],
+        window_width=80,
+        window_height=60,
     )
     k += 1
     # wrapping the environment
     env = Wrapper_StackObservation(env, n_frames)
-    env.append_wrapper(Wrapper_Resize(env, shape=resize_shape))
+    # env.append_wrapper(Wrapper_Resize(env, shape=resize_shape))
     env.append_wrapper(Wrapper_BW(env))
     env.append_wrapper(Wrapper_NormalizeImage(env))
 
@@ -66,6 +70,8 @@ for _ in range(n_envs):
     env.render(mode="rgb_array")
     envs.append(env)
 
+
+device = "cpu"
 
 # assemble first obervation
 l_obs = []
@@ -78,7 +84,7 @@ obs = np.stack(l_obs, axis=0)
 # create replay buffer
 batch_size = 256
 replay_buffer = ReplayBuffer(
-    n_envs * 300, batch_size, normalize_rewards=False, device="cpu"
+    n_envs * 2500, batch_size, normalize_rewards=False, device=device
 )
 # replay_buffer = load_replay_buffer()
 
@@ -90,12 +96,13 @@ agent = SAC(
     state_dim,  # envs[0].observation_space.shape[:3],
     envs[0].action_space.shape[0],
     replay_buffer=replay_buffer,
-    device="cpu",
+    device=device,
 )
 tot_episodes = 0
 timesteps = 0
-probability_training = 0.66
+probability_training = 1.0
 save_on_episodes = 200
+running_avg_reward = 0
 
 folder_name = os.path.join("models", f"{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 path = "/media/g.ferraro/DONNEES"
@@ -106,6 +113,7 @@ def update(dt):
     global tot_episodes
     global timesteps
     global probability_training
+    global running_avg_reward
     """
     This function is called at every frame to handle
     movement/stepping and redrawing
@@ -135,8 +143,10 @@ def update(dt):
     rewards.clear()
     dones.clear()
 
+    avg_reward = reward.sum(0) / n_envs
+    running_avg_reward += (avg_reward - running_avg_reward) / (timesteps + 1)
     print(
-        f"eps = {tot_episodes} step_count = {timesteps}, rewards={reward.sum(0)/n_envs}"
+        f"eps = {tot_episodes} step_count = {timesteps}, avg_reward={avg_reward:.3f}, runn_avg_reward={running_avg_reward:.3f}"
     )
 
     replay_buffer.add(obs, next_obs, action, reward, done)
@@ -154,7 +164,7 @@ def update(dt):
         agent.save(path, folder_name, tot_episodes)
 
     if True in done:
-        idx = np.where(np.any(done, axis=1))[0]
+        idx = np.where(np.any(done, axis=0))[0]
         idx_envs = idx % n_envs
         for id in idx_envs:
             env = envs[id]

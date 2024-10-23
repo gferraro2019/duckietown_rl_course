@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import torch
-from datetime import datetime
 import os
 import time
 
@@ -21,7 +20,7 @@ from duckietownrl.utils.wrappers import (
     Wrapper_StackObservation,
 )
 
-from duckietownrl.algorithms.sac import SAC
+from duckietownrl.algorithms.sac_3dconv_cleanrl import SAC
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)
@@ -61,6 +60,10 @@ env = DuckietownEnv(
     domain_rand=args.domain_rand,
     max_steps=args.max_steps,
     seed=args.seed,
+    camera_width=resize_shape[0],
+    camera_height=resize_shape[1],
+    window_width=80,
+    window_height=60,
 )
 
 # wrapping the environment
@@ -73,12 +76,8 @@ env.reset()
 env.render(mode="rgb_array")
 
 # initialize stack
-# initialize stack
 for _ in range(n_frames):
     obs, _, _, _ = env.step([0, 0])
-
-# create replay buffer
-batch_size = 256
 
 # define an agent
 state_dim = (n_frames, *resize_shape)  # Shape of state input (4, 84, 84)
@@ -92,14 +91,15 @@ agent = SAC(
 # set the agent in evaluate mode
 agent.set_to_eval_mode()
 
-folder_name = "20241018_175853"
+folder_name = "20241023_122436"
 path = "/media/g.ferraro/DONNEES"
 
 # load model
-agent.load_weights(path, folder_name, 2600)
+agent.load_weights(path, folder_name, 200)
 
 tot_episodes = 0
 timesteps = 0
+running_avg_reward = 0
 
 
 def update(dt):
@@ -107,20 +107,27 @@ def update(dt):
     global tot_episodes
     global timesteps
     global probability_training
+    global running_avg_reward
+
     """
     This function is called at every frame to handle
     movement/stepping and redrawing
     """
 
-    action = agent.select_action(torch.tensor(obs, dtype=torch.float32))
-    next_obs, reward, done, info = env.step(action)
+    action = agent.select_action(torch.tensor(obs, dtype=torch.float32).unsqueeze(0))
+    next_obs, reward, done, info = env.step(action.squeeze())
 
-    print(f"step_count = {env.unwrapped.step_count}, rewards={sum(reward)}")
+    running_avg_reward += (reward - running_avg_reward) / (timesteps + 1)
+    print(
+        f"eps = {tot_episodes} step_count = {timesteps}, reward={reward:.3f}, runn_avg_reward={running_avg_reward:.3f}"
+    )
+
+    print(f"step_count = {env.unwrapped.step_count}, reward={reward}")
 
     obs = next_obs
     env.render(mode="human")
 
-    if True in done:
+    if done is True:
         obs, _, _, _ = env.reset()
         env.render()
         tot_episodes += 1
