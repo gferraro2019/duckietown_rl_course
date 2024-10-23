@@ -222,8 +222,8 @@ class Wrapper_StackObservation(Wrapper):
             self.stack_observation(obs)
         return (
             self.observations_stack,
-            self.rewards_stack,
-            self.dones_stack,
+            sum(self.rewards_stack) / self.n_obs,
+            True if 1 == sum(self.dones_stack) else False,
             self.infos_stack,
         )
 
@@ -232,8 +232,8 @@ class Wrapper_StackObservation(Wrapper):
         self.stack_observation(obs)
         return (
             self.observations_stack,
-            self.rewards_stack,
-            self.dones_stack,
+            sum(self.rewards_stack) / self.n_obs,
+            True if 1 == sum(self.dones_stack) else False,
             self.infos_stack,
         )
 
