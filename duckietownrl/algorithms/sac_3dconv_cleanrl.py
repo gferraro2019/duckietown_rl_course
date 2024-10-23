@@ -26,6 +26,9 @@ class SAC:
         reward_scale=1,
         replay_buffer=None,
         device="cpu",
+        target_network_frequency=1,
+        policy_frequency=2,
+        tau=0.005,
     ):
         self.env_name = env_name
         self.state_dim = state_dim
@@ -36,11 +39,11 @@ class SAC:
         self.action_bounds = action_bounds
         self.reward_scale = reward_scale
         self.memory = replay_buffer
-        self.target_network_frequency = 1
-        self.policy_frequency = 2
-        self.tau = 0.005
+        self.target_network_frequency = target_network_frequency
+        self.policy_frequency = policy_frequency
+        self.tau = tau
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
 
         self.policy_network = PolicyNetwork(
             state_dim=self.state_dim,
@@ -159,27 +162,6 @@ class SAC:
         torch.save(
             self.policy_network.state_dict(),
             os.path.join(file_path, self.env_name + f"_policy_{episodes}_weights.pth"),
-        )
-        torch.save(
-            self.q_value_network1.state_dict(),
-            os.path.join(
-                file_path,
-                self.env_name + f"_qvalue_net1_{episodes}_weights.pth",
-            ),
-        )
-        torch.save(
-            self.q_value_network2.state_dict(),
-            os.path.join(
-                file_path,
-                self.env_name + f"_qvalue_net2_{episodes}_weights.pth",
-            ),
-        )
-        torch.save(
-            self.value_network.state_dict(),
-            os.path.join(
-                file_path,
-                self.env_name + f"_value_net_{episodes}_weights.pth",
-            ),
         )
 
     def load_weights(self, path, folder_name, n_episodes):
