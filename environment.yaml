@@ -16,4 +16,5 @@ dependencies:
         - pyglet==1.5.27
         - zuper-commons-z6==6.2.4
         - zmq
+        - wandb
         - -e .

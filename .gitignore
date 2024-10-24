@@ -1,3 +1,5 @@
 *.pyc
 *.pth
 *replay_buffer
+*.log
+wandb/*

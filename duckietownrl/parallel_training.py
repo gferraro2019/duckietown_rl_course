@@ -21,7 +21,22 @@ from duckietownrl.utils.wrappers import (
     Wrapper_StackObservation,
 )
 
-from duckietownrl.algorithms.sac_new_3dconv import SAC
+from duckietownrl.algorithms.sac_new_2dconv import SAC
+
+import wandb
+
+# start a new wandb run to track this script
+wandb.init(
+    # set the wandb project where this run will be logged
+    project="duckietownrl-sac-conv2d",
+    # track hyperparameters and run metadata
+    config={
+        "learning_rate": 0.001,
+        "architecture": "CNN",
+        "dataset": "duckietown-simulator",
+        "epochs": 0,
+    },
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)
@@ -43,17 +58,20 @@ args = parser.parse_args()
 
 
 n_frames = 4
-n_envs = 200
+n_envs = 10
 resize_shape = (16, 16)  # (width,height)
 envs = []
 k = 0
-for _ in range(n_envs):
+for i in range(n_envs):
+    print(f"creating env N.{i}...")
     env = DuckietownEnv(
         map_name=args.map_name,
         distortion=args.distortion,
         domain_rand=args.domain_rand,
         max_steps=args.max_steps,
         seed=args.seed + k,
+        window_width=60,
+        window_height=60,
     )
     k += 1
     # wrapping the environment
@@ -103,6 +121,8 @@ running_avg_reward = 0
 folder_name = os.path.join("models", f"{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 path = "/media/g.ferraro/DONNEES"
 
+eps_returns = np.zeros(n_envs)
+
 
 def update(dt):
     global obs
@@ -110,6 +130,7 @@ def update(dt):
     global timesteps
     global probability_training
     global running_avg_reward
+    global eps_returns
     """
     This function is called at every frame to handle
     movement/stepping and redrawing
@@ -145,6 +166,7 @@ def update(dt):
         f"eps = {tot_episodes} step_count = {timesteps}, avg_reward={avg_reward:.3f}, runn_avg_reward={running_avg_reward:.3f}"
     )
 
+    eps_returns += reward
     replay_buffer.add(obs, next_obs, action, reward, done)
 
     # Train with a certain probability for computing efficiency
@@ -153,7 +175,7 @@ def update(dt):
 
     obs = next_obs
 
-    for env in envs[-10:]:
+    for env in envs[-4:]:
         env.render(mode="human")
 
     if tot_episodes > 0 and tot_episodes % save_on_episodes == 0:
@@ -169,6 +191,9 @@ def update(dt):
             obs[id] = np.stack(obs_env[0], axis=0)
             # env.render()
             tot_episodes += 1
+            wandb.log({"ep_return": eps_returns[id]})
+
+            eps_returns[id] = 0.0
 
     timesteps += 1
 
@@ -176,6 +201,6 @@ def update(dt):
 dt = 0.001
 t = time.time()
 while True:
-    if time.time() - t > dt:
-        update(dt)
-        t = time.time()
+    # if time.time() - t > dt:
+    update(dt)
+    # t = time.time()
