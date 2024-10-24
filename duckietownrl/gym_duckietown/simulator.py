@@ -97,8 +97,8 @@ class DynamicsInfo:
 
 
 # Rendering window size
-WINDOW_WIDTH = 60
-WINDOW_HEIGHT = 60
+WINDOW_WIDTH = 16
+WINDOW_HEIGHT = 16
 
 # Camera image size
 DEFAULT_CAMERA_WIDTH = 16
@@ -805,6 +805,8 @@ class Simulator(gym.Env):
 
         # Generate the first camera image
         obs = self.render_obs(segment=segment)
+
+        self.previous_angle = self.cur_angle
 
         # Return first observation
         return obs
@@ -1672,7 +1674,11 @@ class Simulator(gym.Env):
 
         # Compute the robot's speed
         delta_pos = self.cur_pos - prev_pos
+        # print(action)
+        negative = (action < 0).max()
         self.speed = np.linalg.norm(delta_pos) / delta_time
+        if negative:
+            self.speed *= -1
 
         # Update world objects
         for obj in self.objects:
@@ -1774,40 +1780,50 @@ class Simulator(gym.Env):
             timestep_cost = 0
             # Compute the reward
 
-            x, z, y = pos
-            y1 = 0.05
-            y2 = 0.4
-            y3 = 1.43
-            y4 = 1.65
-            x1 = 0.05
-            x2 = 0.4
-            x3 = 1.43
-            x4 = 1.65
-            reward = -1
-            if y1 <= y and y <= y2:
-                if x < self.x:
-                    reward = speed
-            elif y3 <= y and y <= y4:
-                if x > self.x:
-                    reward = speed
+            # x, z, y = pos
+            # y1 = 0.05
+            # y2 = 0.4
+            # y3 = 1.43
+            # y4 = 1.65
+            # x1 = 0.05
+            # x2 = 0.4
+            # x3 = 1.43
+            # x4 = 1.65
+            # reward = -1
+            # if y1 <= y and y <= y2:
+            #     if x < self.x:
+            #         reward = speed
+            # elif y3 <= y and y <= y4:
+            #     if x > self.x:
+            #         reward = speed
 
-            elif x1 <= x and x <= x2:
-                if y > self.y:
-                    reward = speed
+            # elif x1 <= x and x <= x2:
+            #     if y > self.y:
+            #         reward = speed
 
-            elif x3 <= x and x <= x4:
-                if y < self.y:
-                    reward = speed
+            # elif x3 <= x and x <= x4:
+            #     if y < self.y:
+            #         reward = speed
+            diff_angle = abs(self.angle_difference_rad(angle, self.previous_angle))
+            reward = (
+                +1.0 * speed * lp.dot_dir
+                + -10 * np.abs(lp.dist)
+                + -10 * diff_angle
+                # + +40 * col_penalty
+                # - timestep_cost
+            )
+            self.previous_angle = angle
+        #     self.x = x
+        #     self.y = y
+        # return reward * lp.dot_dir
+        return reward
 
-            # reward = (
-            #     +1.0 * speed * lp.dot_dir
-            #     + -10 * np.abs(lp.dist)
-            #     + +40 * col_penalty
-            #     - timestep_cost
-            # )
-            self.x = x
-            self.y = y
-        return reward * lp.dot_dir
+    def normalize_angle_rad(self, angle):
+        return (angle + np.pi) % (2 * np.pi) - np.pi
+
+    def angle_difference_rad(self, angle1, angle2):
+        difference = angle2 - angle1
+        return self.normalize_angle_rad(difference)
 
     def step(self, action: np.ndarray):
         action = np.clip(action, -1, 1)
