@@ -90,7 +90,15 @@ import cv2
 
 class Wrapper(DuckietownEnv):
     def __init__(self, env):
-        keys_to_keep = ["map_name", "distortion", "domain_rand", "max_steps", "seed"]
+        keys_to_keep = [
+            "map_name",
+            "distortion",
+            "domain_rand",
+            "max_steps",
+            "seed",
+            "window_width",
+            "window_height",
+        ]
         env_to_dict = vars(env)
         kwargs = {k: env_to_dict[k] for k in keys_to_keep if k in env_to_dict}
         self.wrappers_list = []
