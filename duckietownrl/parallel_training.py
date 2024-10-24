@@ -44,7 +44,7 @@ args = parser.parse_args()
 
 n_frames = 4
 n_envs = 200
-resize_shape = (32, 24)  # (width,height)
+resize_shape = (16, 16)  # (width,height)
 envs = []
 k = 0
 for _ in range(n_envs):
@@ -54,10 +54,6 @@ for _ in range(n_envs):
         domain_rand=args.domain_rand,
         max_steps=args.max_steps,
         seed=args.seed + k,
-        camera_width=resize_shape[0],
-        camera_height=resize_shape[1],
-        window_width=80,
-        window_height=60,
     )
     k += 1
     # wrapping the environment
@@ -71,7 +67,7 @@ for _ in range(n_envs):
     envs.append(env)
 
 
-device = "cpu"
+device = "cuda"
 
 # assemble first obervation
 l_obs = []
@@ -122,7 +118,7 @@ def update(dt):
     rewards = []
     dones = []
 
-    action = agent.select_action(torch.tensor(obs, dtype=torch.float32))
+    action = agent.select_action(torch.tensor(obs, dtype=torch.float32).to(device))
     # noise = np.random.randint(-300, 300, (n_envs, 2)) * 0.0001
     # noisy_action = action + noise
 
@@ -153,18 +149,18 @@ def update(dt):
 
     # Train with a certain probability for computing efficiency
     if np.random.random() < probability_training:
-        agent.train(timesteps)
+        agent.train(timesteps, device)
 
     obs = next_obs
 
-    for env in envs[-2:]:
+    for env in envs[-10:]:
         env.render(mode="human")
 
     if tot_episodes > 0 and tot_episodes % save_on_episodes == 0:
         agent.save(path, folder_name, tot_episodes)
 
     if True in done:
-        idx = np.where(np.any(done, axis=0))[0]
+        idx = np.where(done)[0]
         idx_envs = idx % n_envs
         for id in idx_envs:
             env = envs[id]

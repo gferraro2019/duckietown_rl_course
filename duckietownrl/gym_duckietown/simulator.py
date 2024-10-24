@@ -97,12 +97,12 @@ class DynamicsInfo:
 
 
 # Rendering window size
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 60
+WINDOW_HEIGHT = 60
 
 # Camera image size
-DEFAULT_CAMERA_WIDTH = 640
-DEFAULT_CAMERA_HEIGHT = 480
+DEFAULT_CAMERA_WIDTH = 16
+DEFAULT_CAMERA_HEIGHT = 16
 
 # Blue sky horizon color
 BLUE_SKY = np.array([0.45, 0.82, 1])
