@@ -36,6 +36,8 @@ if args.env_name is None:
         domain_rand=args.domain_rand,
         max_steps=np.inf,
         seed=args.seed,
+        window_height=600,
+        window_width=600,
     )
 else:
     env = gym.make(args.env_name)

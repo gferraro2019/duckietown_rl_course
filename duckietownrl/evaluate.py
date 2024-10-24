@@ -12,7 +12,6 @@ from pyglet.window import key  # do not remove, otherwhise render issue
 
 
 from duckietownrl.gym_duckietown.envs import DuckietownEnv
-from duckietownrl.utils.utils import ReplayBuffer
 from duckietownrl.utils.wrappers import (
     Wrapper_BW,
     Wrapper_NormalizeImage,
@@ -20,7 +19,7 @@ from duckietownrl.utils.wrappers import (
     Wrapper_StackObservation,
 )
 
-from duckietownrl.algorithms.sac_3dconv_cleanrl import SAC
+from duckietownrl.algorithms.sac_new_2dconv import SAC
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)
@@ -52,7 +51,7 @@ def load_replay_buffer(filename="replay_buffer"):
 
 
 n_frames = 4
-resize_shape = (32, 24)  # (width,height)
+resize_shape = (16, 16)  # (width,height)
 envs = []
 env = DuckietownEnv(
     map_name=args.map_name,
@@ -60,20 +59,21 @@ env = DuckietownEnv(
     domain_rand=args.domain_rand,
     max_steps=args.max_steps,
     seed=args.seed,
-    camera_width=resize_shape[0],
-    camera_height=resize_shape[1],
-    window_width=80,
-    window_height=60,
+    window_width = 600
+    window_height = 600
 )
 
 # wrapping the environment
 env = Wrapper_StackObservation(env, n_frames)
-env.append_wrapper(Wrapper_Resize(env, shape=resize_shape))
+# env.append_wrapper(Wrapper_Resize(env, shape=resize_shape))
 env.append_wrapper(Wrapper_BW(env))
 env.append_wrapper(Wrapper_NormalizeImage(env))
 
 env.reset()
 env.render(mode="rgb_array")
+
+
+device = "cuda"
 
 # initialize stack
 for _ in range(n_frames):
@@ -87,15 +87,16 @@ agent = SAC(
     state_dim,  # envs[0].observation_space.shape[:3],
     env.action_space.shape[0],
     replay_buffer=None,
+    device=device,
 )
 # set the agent in evaluate mode
 agent.set_to_eval_mode()
 
-folder_name = "20241023_122436"
+folder_name = "20241024_135150"
 path = "/media/g.ferraro/DONNEES"
 
 # load model
-agent.load_weights(path, folder_name, 200)
+agent.load_weights(path, folder_name, 1303)
 
 tot_episodes = 0
 timesteps = 0
@@ -106,7 +107,6 @@ def update(dt):
     global obs
     global tot_episodes
     global timesteps
-    global probability_training
     global running_avg_reward
 
     """
@@ -114,7 +114,9 @@ def update(dt):
     movement/stepping and redrawing
     """
 
-    action = agent.select_action(torch.tensor(obs, dtype=torch.float32).unsqueeze(0))
+    action = agent.select_action(
+        torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(device)
+    )
     next_obs, reward, done, info = env.step(action.squeeze())
 
     running_avg_reward += (reward - running_avg_reward) / (timesteps + 1)
