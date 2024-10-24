@@ -21,7 +21,7 @@ from duckietownrl.utils.wrappers import (
     Wrapper_StackObservation,
 )
 
-from duckietownrl.algorithms.sac_3dconv_cleanrl import SAC
+from duckietownrl.algorithms.sac_new_3dconv import SAC
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)
