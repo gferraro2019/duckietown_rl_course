@@ -50,8 +50,8 @@ def load_replay_buffer(filename="replay_buffer"):
     return replay_buffer
 
 
-n_frames = 4
-resize_shape = (16, 16)  # (width,height)
+n_frames = 3
+resize_shape = (28, 28)  # (width,height)
 envs = []
 env = DuckietownEnv(
     map_name=args.map_name,
@@ -59,8 +59,10 @@ env = DuckietownEnv(
     domain_rand=args.domain_rand,
     max_steps=args.max_steps,
     seed=args.seed,
-    window_width = 600
-    window_height = 600
+    window_width=600,
+    window_height=600,
+    camera_width=resize_shape[0],
+    camera_height=resize_shape[1],
 )
 
 # wrapping the environment
@@ -91,16 +93,6 @@ agent = SAC(
 )
 # set the agent in evaluate mode
 agent.set_to_eval_mode()
-
-folder_name = "20241024_135150"
-path = "/media/g.ferraro/DONNEES"
-
-# load model
-agent.load_weights(path, folder_name, 1303)
-
-tot_episodes = 0
-timesteps = 0
-running_avg_reward = 0
 
 
 def update(dt):
@@ -137,9 +129,27 @@ def update(dt):
     timesteps += 1
 
 
-dt = 0.01
-t = time.time()
-while True:
-    if time.time() - t > dt:
-        update(dt)
+folder_name = "20241029_155926"
+path = "/media/g.ferraro/DONNEES"
+
+for fl in range(0, 30000, 200):
+    try:
+        # load model
+        agent.load_weights(path, folder_name, fl)
+        print(
+            "\n\n",
+            "*" * 100,
+            f"\n model:{fl}\n\n",
+            "*" * 100,
+        )
+        tot_episodes = 0
+        timesteps = 0
+        running_avg_reward = 0
+        dt = 0.1
         t = time.time()
+        while tot_episodes < 3:
+            if time.time() - t > dt:
+                update(dt)
+                t = time.time()
+    except:
+        print(f"the model {fl} does not exist.")
