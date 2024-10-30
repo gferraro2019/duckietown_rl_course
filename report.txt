@@ -1,0 +1,22 @@
+run:dainty-haze-23
+link:https://wandb.ai/gferraro2016-isae-supaero/duckietownrl-sac-conv2d/runs/p8q6rpse?nw=nwusergferraro2016
+reward function:
+         reward = (
+                +10 * speed * lp.dot_dir
+                + -10 * np.abs(lp.dist)
+            )
+folder:/media/g.ferraro/DONNEES/models/20241029_155926
+n_envs:2
+batch-size:64
+replay buffer : 500_000
+state_shape:3x28x28
+action_shape:2
+agent:sac conv2d
+wrappers:stack,B/W,normalization
+gamma=0.99,
+alpha=0.2,
+actor_lr=1e-4,
+critic_lr=1e-3,
+target_network_frequency=1,
+policy_frequency=2,
+tau=0.005,
