@@ -413,6 +413,9 @@ class Simulator(gym.Env):
         self.y = 0
         self.last_action = np.array([0, 0])
         self.wheelVels = np.array([0, 0])
+        self.lp = None
+        self.speed_limit = 0.15
+        self.speed_limit_penality = 1
 
     def _init_vlists(self):
 
@@ -1674,11 +1677,12 @@ class Simulator(gym.Env):
 
         # Compute the robot's speed
         delta_pos = self.cur_pos - prev_pos
-        # print(action)
-        negative = (action < 0).max()
+
+        negative = action[0] < 0 and action[1] < 0
         self.speed = np.linalg.norm(delta_pos) / delta_time
         if negative:
             self.speed *= -1
+        # print(self.speed)
 
         # Update world objects
         for obj in self.objects:
@@ -1774,6 +1778,7 @@ class Simulator(gym.Env):
         # Get the position relative to the right lane tangent
         try:
             lp = self.get_lane_pos2(pos, angle)
+            self.lp = lp
         except NotInLane:
             reward = 40 * col_penalty
         else:
@@ -1804,18 +1809,12 @@ class Simulator(gym.Env):
             # elif x3 <= x and x <= x4:
             #     if y < self.y:
             #         reward = speed
-            diff_angle = abs(self.angle_difference_rad(angle, self.previous_angle))
-            reward = (
-                +1.0 * speed * lp.dot_dir
-                + -10 * np.abs(lp.dist)
-                + -10 * diff_angle
-                # + +40 * col_penalty
-                # - timestep_cost
-            )
-            self.previous_angle = angle
-        #     self.x = x
-        #     self.y = y
-        # return reward * lp.dot_dir
+            # diff_angle = abs(self.angle_difference_rad(angle, self.previous_angle))
+            if speed >= 0:
+                reward = +1.0 * speed * lp.dot_dir + -10 * np.abs(lp.dist)
+            else:
+                reward = speed * 10
+
         return reward
 
     def normalize_angle_rad(self, angle):
