@@ -6,6 +6,8 @@ import torch
 import os
 import pickle
 
+from zmq import device
+
 
 def load_replay_buffer(filename="replay_buffer"):
     print("loading replay buffer...")
@@ -36,48 +38,45 @@ class ReplayBuffer:
         batch_size=32,
         state_shape=(4, 120, 160),
         action_shape=(1, 2),
-        reward_shape=(1, 1),
         device="cpu",
         normalize_rewards=False,
     ):
         self.device = device
         # self.content = []
-        self.states_img = torch.empty(0, dtype=torch.float32).detach().to(self.device)
-        self.actions = torch.empty(0, dtype=torch.float32).detach().to(self.device)
-        self.rewards = torch.empty(0, dtype=torch.float32).detach().to(self.device)
-        self.next_states_img = (
-            torch.empty(0, dtype=torch.float32).detach().to(self.device)
-        )
-        self.dones = torch.empty(0, dtype=torch.bool).detach().to(self.device)
         self.state_shape = state_shape
 
         self.capacity = capacity
         self.idx = 0
+        self.filled = False
         self.batch_size = batch_size
         self.indices = np.zeros(batch_size)
         self.normalize_rewards = normalize_rewards
-
-        assert self.calculate_memory_allocation()
-
-    def stack(self, observation, side):
-        """This function concatenate numpy array in stacked tensor.
-
-        Args:
-            observation (_type_): _description_
-            side (_type_): 0 for images, 1 for distances
-
-        Returns:
-            _type_: _description_
-        """
-        t = torch.cat(
-            [
-                torch.tensor(observation[0][side], dtype=torch.float32).to(self.device),
-                torch.tensor(observation[1][side], dtype=torch.float32).to(self.device),
-                torch.tensor(observation[2][side], dtype=torch.float32).to(self.device),
-            ]
+        self.state_shape = state_shape
+        self.action_shape = action_shape
+        self.states_img = (
+            torch.empty((capacity, *state_shape), dtype=torch.float32)
+            .detach()
+            .to(self.device)
         )
+        self.actions = (
+            torch.empty((capacity, action_shape), dtype=torch.float32)
+            .detach()
+            .to(self.device)
+        )
+        self.rewards = (
+            torch.empty(capacity, dtype=torch.float32).detach().to(self.device)
+        )
+        self.next_states_img = (
+            torch.empty((capacity, *state_shape), dtype=torch.float32)
+            .detach()
+            .to(self.device)
+        )
+        self.dones = torch.empty(capacity, dtype=torch.bool).detach().to(self.device)
 
-        return t.unsqueeze(0).to(self.device)
+    def change_bacth_size(self, batch_size):
+        self.batch_size = batch_size
+        del self.indices
+        self.indices = np.zeros(batch_size)
 
     def save(self, filename="replay_buffer"):
         print("saving replay buffer...")
@@ -88,106 +87,41 @@ class ReplayBuffer:
 
     @torch.no_grad()
     def add(self, obs, next_obs, actions, rewards, dones):
-        if len(self) < self.capacity:
-            # self.content.append(observation)
-            temp_tensor = (
-                torch.tensor(obs, dtype=torch.float32).detach().to(self.device)
-            )
-            size_sample = temp_tensor.shape[0]
-
-            self.states_img = torch.cat(
-                [
-                    self.states_img,
-                    temp_tensor,
-                ],
-                0,
-            )
-            del temp_tensor
-
-            temp_tensor = (
-                torch.tensor(actions, dtype=torch.float32).detach().to(self.device)
-            )
-            self.actions = torch.cat(
-                [
-                    self.actions,
-                    temp_tensor,
-                ],
-                0,
-            )
-            del temp_tensor
-
-            temp_tensor = (
-                torch.tensor(rewards, dtype=torch.float32).detach().to(self.device)
-            )
-            self.rewards = torch.cat(
-                [
-                    self.rewards,
-                    temp_tensor,
-                ],
-                0,
-            )
-            del temp_tensor
-
-            temp_tensor = (
-                torch.tensor(next_obs, dtype=torch.float32).detach().to(self.device)
-            )
-            self.next_states_img = torch.cat(
-                [
-                    self.next_states_img,
-                    temp_tensor,
-                ],
-                0,
-            )
-            del temp_tensor
-            temp_tensor = (
-                torch.tensor(dones, dtype=torch.float32).detach().to(self.device)
-            )
-            self.dones = torch.cat(
-                [
-                    self.dones,
-                    temp_tensor,
-                ],
-                0,
-            )
-            del temp_tensor
+        temp_tensor = torch.tensor(obs, dtype=torch.float32).detach().to(self.device)
+        size_sample = temp_tensor.shape[0]
+        interval = [self.idx, 0]
+        if self.idx + size_sample < self.capacity:
+            interval[1] = self.idx + size_sample
         else:
-            # self.content[self.idx] = observation
-            temp_tensor = (
-                torch.tensor(obs, dtype=torch.float32).detach().to(self.device)
-            )
-            size_sample = temp_tensor.shape[0]
-            interval = [self.idx, 0]
-            if self.idx + size_sample < self.capacity:
-                interval[1] = self.idx + size_sample
-            else:
-                interval[1] = None  # size_sample + interval[0]
+            interval[1] = None  # size_sample + interval[0]
 
-            self.states_img[interval[0] : interval[1]] = temp_tensor
-            del temp_tensor
+        self.states_img[interval[0] : interval[1]] = temp_tensor
+        del temp_tensor
 
-            temp_tensor = (
-                torch.tensor(actions, dtype=torch.float32).detach().to(self.device)
-            )
-            self.actions[interval[0] : interval[1]] = temp_tensor
-            del temp_tensor
+        temp_tensor = (
+            torch.tensor(actions, dtype=torch.float32).detach().to(self.device)
+        )
+        self.actions[interval[0] : interval[1]] = temp_tensor
+        del temp_tensor
 
-            temp_tensor = (
-                torch.tensor(rewards, dtype=torch.float32).detach().to(self.device)
-            )
-            self.rewards[interval[0] : interval[1]] = temp_tensor
-            del temp_tensor
+        temp_tensor = (
+            torch.tensor(rewards, dtype=torch.float32).detach().to(self.device)
+        )
+        self.rewards[interval[0] : interval[1]] = temp_tensor
+        del temp_tensor
 
-            temp_tensor = (
-                torch.tensor(next_obs, dtype=torch.float32).detach().to(self.device)
-            )
-            self.next_states_img[interval[0] : interval[1]] = temp_tensor
-            del temp_tensor
+        temp_tensor = (
+            torch.tensor(next_obs, dtype=torch.float32).detach().to(self.device)
+        )
+        self.next_states_img[interval[0] : interval[1]] = temp_tensor
+        del temp_tensor
 
-            temp_tensor = (
-                torch.tensor(dones, dtype=torch.float32).detach().to(self.device)
-            )
-            self.dones[interval[0] : interval[1]] = temp_tensor
-            del temp_tensor
+        temp_tensor = torch.tensor(dones, dtype=torch.float32).detach().to(self.device)
+        self.dones[interval[0] : interval[1]] = temp_tensor
+        del temp_tensor
+
+        if self.idx + size_sample == self.capacity:
+            self.filled = True
 
         self.idx = (self.idx + size_sample) % self.capacity
 
@@ -225,58 +159,60 @@ class ReplayBuffer:
         else:
             assert "Can't sample: not enough elements!"
 
-    def empty_replaybuffer(self):
-        print("Emptyng replay buffer...")
-        del self.states_img
-        del self.actions
-        del self.rewards
-        del self.next_states_img
-        del self.dones
-
-        self.states_img = torch.empty(0, dtype=torch.float32).detach().to(self.device)
-        self.actions = torch.empty(0, dtype=torch.float32).detach().to(self.device)
-        self.rewards = torch.empty(0, dtype=torch.float32).detach().to(self.device)
-        self.next_states_img = (
-            torch.empty(0, dtype=torch.float32).detach().to(self.device)
-        )
-        self.dones = torch.empty(0, dtype=torch.bool).detach().to(self.device)
-        self.idx = 0
-        self.indices = np.zeros(self.batch_size)
-        print("Done. Replay buffer was empty!")
-
-    def shuffle(self, sample_capacity):
-        return random.sample(self.content, sample_capacity)
-
-    def calculate_memory_allocation(self):
-        n_bytes = 4
-        memory_allocation = self.capacity * self.states_img.element_size()
-        memory_allocation *= 2  # accounting for next states
-        memory_allocation += self.capacity * self.actions.element_size()
-        memory_allocation += self.capacity * self.rewards.element_size()
-        memory_allocation += self.capacity * self.dones.element_size()
-        memory_allocation *= n_bytes
-        memory_allocation /= 1e9
-        msg = f"you will need {memory_allocation} GBytes of RAM"
-
-        # Getting all memory using os.popen()
-        total_memory, used_memory, free_memory = map(
-            int, os.popen("free -t -m ").readlines()[-1].split()[1:]
-        )
-
-        if (total_memory - used_memory) / 1000 < memory_allocation:
-            print(msg)
-            # Memory usage
-            print("RAM memory % used:", round((used_memory / total_memory) * 100, 2))
-            print(
-                "RAM memory % available:", round((total_memory - used_memory) / 100, 2)
-            )
-            print("RAM memory % free:", round((free_memory / total_memory) * 100, 2))
-            return False, msg
-        else:
-            return True, msg
-
     def __len__(self):
-        return self.dones.shape[0]
+        size = 0
+        if self.filled:
+            size = self.dones.shape[0]
+        else:
+            size = self.idx
+        return size
+
+    @torch.no_grad()
+    def increase_capacity(self, new_capacity):
+        assert new_capacity > self.capacity
+        increment = new_capacity - self.capacity
+        self.states_img = torch.cat(
+            (
+                self.states_img,
+                torch.empty((increment, *self.state_shape), dtype=torch.float32)
+                .detach()
+                .to(self.device),
+            )
+        )
+        self.actions = torch.cat(
+            (
+                self.actions,
+                torch.empty((increment, self.action_shape), dtype=torch.float32)
+                .detach()
+                .to(self.device),
+            )
+        ).to(self.device)
+
+        self.rewards = torch.cat(
+            (
+                self.rewards,
+                torch.empty(increment, dtype=torch.float32).detach().to(self.device),
+            )
+        ).to(self.device)
+
+        self.next_states_img = torch.cat(
+            (
+                self.next_states_img,
+                torch.empty((increment, *self.state_shape), dtype=torch.float32)
+                .detach()
+                .to(self.device),
+            )
+        ).to(self.device)
+
+        self.dones = torch.cat(
+            (
+                self.dones,
+                torch.empty(increment, dtype=torch.bool).detach().to(self.device),
+            )
+        ).to(self.device)
+        self.filled = False
+        self.idx = self.capacity
+        self.capacity = new_capacity
 
 
 """
