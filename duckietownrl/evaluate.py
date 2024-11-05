@@ -24,7 +24,7 @@ from duckietownrl.algorithms.sac_new_2dconv import SAC
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)
 parser.add_argument("--env-name", default=None)
-parser.add_argument("--map-name", default="small_loop")
+parser.add_argument("--map-name", default="small_loop_bordered")
 parser.add_argument("--distortion", default=False, action="store_true")
 parser.add_argument(
     "--draw-curve", action="store_true", help="draw the lane following curve"
@@ -129,10 +129,10 @@ def update(dt):
     timesteps += 1
 
 
-folder_name = "20241029_155926"
+folder_name = "20241105_151801"
 path = "/media/g.ferraro/DONNEES"
-
-for fl in range(0, 30000, 200):
+nb_episodes = 2
+for fl in range(0, 30000):
     try:
         # load model
         agent.load_weights(path, folder_name, fl)
@@ -147,7 +147,7 @@ for fl in range(0, 30000, 200):
         running_avg_reward = 0
         dt = 0.1
         t = time.time()
-        while tot_episodes < 3:
+        while tot_episodes < nb_episodes:
             if time.time() - t > dt:
                 update(dt)
                 t = time.time()
