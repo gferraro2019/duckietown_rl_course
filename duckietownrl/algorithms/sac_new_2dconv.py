@@ -74,6 +74,8 @@ class SAC:
         self.actor_optimizer = Adam(
             list(self.policy_network.parameters()), lr=self.actor_lr
         )
+        self.actor_loss_value = 0
+        self.q_loss_value = 0
 
     def store(self, state, reward, done, action, next_state):
         state = from_numpy(state).float().to("cpu")
@@ -115,7 +117,7 @@ class SAC:
                 action_values2, expected_action_values
             )
             q_loss = action_values1_loss + action_values2_loss
-
+            self.q_loss_value = q_loss.item()
             self.q_optimizer.zero_grad()
             q_loss.backward()
             self.q_optimizer.step()
@@ -128,6 +130,7 @@ class SAC:
                 )
 
                 actor_loss = ((self.alpha * log_actions_values) - actions_values).mean()
+                self.actor_loss_value = actor_loss.item()
 
                 self.actor_optimizer.zero_grad()
                 actor_loss.backward()

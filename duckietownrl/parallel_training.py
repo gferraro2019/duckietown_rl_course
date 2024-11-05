@@ -41,7 +41,7 @@ wandb.init(
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)
 parser.add_argument("--env-name", default=None)
-parser.add_argument("--map-name", default="small_loop")
+parser.add_argument("--map-name", default="small_loop_bordered")
 parser.add_argument("--distortion", default=False, action="store_true")
 parser.add_argument(
     "--draw-curve", action="store_true", help="draw the lane following curve"
@@ -57,9 +57,9 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-n_frames = 4
-n_envs = 10
-resize_shape = (16, 16)  # (width,height)
+n_frames = 3
+n_envs = 1
+resize_shape = (28, 28)  # (width,height)
 envs = []
 k = 0
 for i in range(n_envs):
@@ -72,6 +72,8 @@ for i in range(n_envs):
         seed=args.seed + k,
         window_width=60,
         window_height=60,
+        camera_width=resize_shape[0],
+        camera_height=resize_shape[1],
     )
     k += 1
     # wrapping the environment
@@ -96,15 +98,15 @@ for _ in envs:
 obs = np.stack(l_obs, axis=0)
 
 # create replay buffer
-batch_size = 256
+batch_size = 64
+state_dim = (n_frames, *resize_shape)  # Shape of state input (4, 84, 84)
+action_dim = 2
 replay_buffer = ReplayBuffer(
-    n_envs * 2500, batch_size, normalize_rewards=False, device=device
+    500_000, batch_size, state_dim, action_dim, normalize_rewards=False, device=device
 )
 # replay_buffer = load_replay_buffer()
 
 # define an agent
-state_dim = (n_frames, *resize_shape)  # Shape of state input (4, 84, 84)
-action_dim = 2
 agent = SAC(
     "DuckieTown",
     state_dim,  # envs[0].observation_space.shape[:3],
@@ -150,6 +152,15 @@ def update(dt):
         next_observations.append(next_obs)
         rewards.append(reward)
         dones.append(done)
+        wandb.log(
+            {
+                "actor_loss": agent.actor_loss_value,
+                "q_loss": agent.q_loss_value,
+                "speed": env.speed,
+                "lp.dot_dir": env.lp.dot_dir,
+                "lp.dist": env.lp.dist,
+            }
+        )
 
     next_obs = np.stack(next_observations, axis=0)
     reward = np.stack(rewards, axis=0)
@@ -164,6 +175,13 @@ def update(dt):
     running_avg_reward += (avg_reward - running_avg_reward) / (timesteps + 1)
     print(
         f"eps = {tot_episodes} step_count = {timesteps}, avg_reward={avg_reward:.3f}, runn_avg_reward={running_avg_reward:.3f}"
+    )
+
+    wandb.log(
+        {
+            "avg_reward": avg_reward,
+            "runn_avg_reward": running_avg_reward,
+        }
     )
 
     eps_returns += reward
@@ -187,12 +205,12 @@ def update(dt):
         for id in idx_envs:
             env = envs[id]
             print(f"env N.{id} done!")
+            wandb.log({"ep_return": eps_returns[id], "step_count": env.step_count})
             obs_env = env.reset()
             obs[id] = np.stack(obs_env[0], axis=0)
+
             # env.render()
             tot_episodes += 1
-            wandb.log({"ep_return": eps_returns[id]})
-
             eps_returns[id] = 0.0
 
     timesteps += 1
