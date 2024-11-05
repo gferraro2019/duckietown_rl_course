@@ -20,3 +20,95 @@ critic_lr=1e-3,
 target_network_frequency=1,
 policy_frequency=2,
 tau=0.005,
+
+########################################
+
+run:strange-dance-31
+link:https://wandb.ai/gferraro2016-isae-supaero/duckietownrl-sac-conv2d/runs/p8q6rpse?nw=nwusergferraro2016
+reward function:
+         reward = (
+                +10 * speed * lp.dot_dir
+                + -11 * np.abs(lp.dist)
+            )
+folder:/media/g.ferraro/DONNEES/models/20241030_135651
+n_envs:1
+batch-size:64
+replay buffer : 500_000
+state_shape:3x28x28
+action_shape:2
+agent:sac conv2d
+wrappers:stack,B/W,normalization
+gamma=0.99,
+alpha=0.2,
+actor_lr=1e-4,
+critic_lr=1e-3,
+target_network_frequency=1,
+policy_frequency=2,
+tau=0.005,
+
+########################################
+
+run:fresh-dream-62
+link:https://wandb.ai/gferraro2016-isae-supaero/duckietownrl-sac-conv2d/runs/6beqbkbm
+reward function:
+            if speed <= 0:
+                reward = -abs(speed) - 0.01
+            else:
+
+                reward = (
+                    +speed
+                    + lp.dot_dir
+                    + -DEFAULT_ROBOT_SPEED * np.abs(lp.dist)
+                    # + -10 * diff_angle
+                    # + +40 * col_penalty
+                    # - timestep_cost
+                )
+                # self.previous_angle = angle
+                if speed < self.speed_limit:
+                    reward += 1 + self.speed * 10
+
+folder:/media/g.ferraro/DONNEES/models/20241104_135541
+n_envs:1
+batch-size:64
+replay buffer : 500_000
+state_shape:3x28x28
+action_shape:2
+agent:sac conv2d
+wrappers:stack,B/W,normalization
+gamma=0.99,
+alpha=0.2,
+actor_lr=1e-4,
+critic_lr=1e-3,
+target_network_frequency=1,
+policy_frequency=2,
+tau=0.005,
+
+########################################
+feedback: The best until now, it is able to make entire loops.
+
+run:young-deluge-89
+link:https://wandb.ai/gferraro2016-isae-supaero/duckietownrl-sac-conv2d/runs/tqthi8p3?nw=nwusergferraro2016
+
+reward function:
+            if speed >= 0:
+                reward = +1.0 * speed * lp.dot_dir + -10 * np.abs(lp.dist)
+            else:
+                reward = speed * 10
+
+        return reward
+
+folder:/media/g.ferraro/DONNEES/models/20241105_151801 120 and 121 episodes
+n_envs:1
+batch-size:64
+replay buffer : 500_000
+state_shape:3x28x28
+action_shape:2
+agent:sac conv2d
+wrappers:stack,B/W,normalization
+gamma=0.99,
+alpha=0.2,
+actor_lr=1e-4,
+critic_lr=1e-3,
+target_network_frequency=1,
+policy_frequency=2,
+tau=0.005,
