@@ -51,7 +51,7 @@ def load_replay_buffer(filename="replay_buffer"):
 
 
 n_frames = 3
-resize_shape = (28, 28)  # (width,height)
+resize_shape = (28, 21)  # (width,height)
 envs = []
 env = DuckietownEnv(
     map_name=args.map_name,
@@ -82,7 +82,7 @@ for _ in range(n_frames):
     obs, _, _, _ = env.step([0, 0])
 
 # define an agent
-state_dim = (n_frames, *resize_shape)  # Shape of state input (4, 84, 84)
+state_dim = (n_frames, *reversed(resize_shape))  # Shape of state input (4, 84, 84)
 action_dim = 2
 agent = SAC(
     "DuckieTown",
@@ -129,9 +129,9 @@ def update(dt):
     timesteps += 1
 
 
-folder_name = "20241105_151801"
+folder_name = "20241106_175247"
 path = "/media/g.ferraro/DONNEES"
-nb_episodes = 2
+nb_episodes = 10
 for fl in range(0, 30000):
     try:
         # load model

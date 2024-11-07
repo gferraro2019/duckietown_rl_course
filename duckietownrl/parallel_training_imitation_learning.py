@@ -14,7 +14,11 @@ from pyglet.window import key  # do not remove, otherwhise render issue
 
 
 from duckietownrl.gym_duckietown.envs import DuckietownEnv
-from duckietownrl.utils.utils import ReplayBuffer, load_replay_buffer
+from duckietownrl.utils.utils import (
+    ReplayBuffer,
+    load_replay_buffer,
+    saturate_replay_buffer,
+)
 from duckietownrl.utils.wrappers import (
     Wrapper_BW,
     Wrapper_NormalizeImage,
@@ -60,7 +64,7 @@ args = parser.parse_args()
 
 n_frames = 3
 n_envs = 1
-resize_shape = (28, 28)  # (width,height)
+resize_shape = (28, 21)  # (width,height)
 envs = []
 k = 0
 for i in range(n_envs):
@@ -71,7 +75,7 @@ for i in range(n_envs):
         domain_rand=args.domain_rand,
         max_steps=args.max_steps,
         seed=args.seed + k,
-        window_width=600,
+        window_width=800,
         window_height=600,
         camera_width=resize_shape[0],
         camera_height=resize_shape[1],
@@ -100,11 +104,20 @@ obs = np.stack(l_obs, axis=0)
 
 # create replay buffer
 batch_size = 64
-state_dim = (n_frames, *resize_shape)  # Shape of state input (4, 84, 84)
+state_dim = (n_frames, *reversed(resize_shape))  # Shape of state input (4, 84, 84)
 action_dim = 2
-replay_buffer = ReplayBuffer(
-    500_000, batch_size, state_dim, action_dim, normalize_rewards=False, device=device
-)
+if os.path.isfile("replay_buffer"):
+    replay_buffer = load_replay_buffer()
+    saturate_replay_buffer(replay_buffer)
+else:
+    replay_buffer = ReplayBuffer(
+        200_000,
+        batch_size,
+        state_dim,
+        action_dim,
+        normalize_rewards=False,
+        device=device,
+    )
 # replay_buffer = load_replay_buffer()
 
 # define an agent

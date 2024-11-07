@@ -26,7 +26,7 @@ def seed(seed):
 
 
 # Code based on:
-# https://github.com/openai/baselines/blob/master/baselines/deepq/replay_buffer.py
+# https://github.com/openai/baselines/blob/master/baselines/deepq/self.py
 
 
 class ReplayBuffer:
@@ -213,6 +213,31 @@ class ReplayBuffer:
         self.filled = False
         self.idx = self.capacity
         self.capacity = new_capacity
+
+
+@torch.no_grad()
+def saturate_replay_buffer(replay_buffer):
+    print("Saturating replay buffer...")
+
+    cursor = replay_buffer.idx
+    while cursor < replay_buffer.capacity:
+
+        if cursor * 2 < replay_buffer.capacity:
+            x = cursor
+        else:
+            x = replay_buffer.capacity - cursor
+
+        replay_buffer.states_img[cursor : cursor + x] = replay_buffer.states_img[:x]
+        replay_buffer.actions[cursor : cursor + x] = replay_buffer.actions[:x]
+        replay_buffer.rewards[cursor : cursor + x] = replay_buffer.rewards[:x]
+        replay_buffer.next_states_img[cursor : cursor + x] = (
+            replay_buffer.next_states_img[:x]
+        )
+        replay_buffer.dones[cursor : cursor + x] = replay_buffer.dones[:x]
+
+        cursor += x
+    replay_buffer.idx = cursor
+    print("Done")
 
 
 """
