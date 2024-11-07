@@ -1,6 +1,7 @@
 import gym
 from gym import spaces
 import numpy as np
+from sympy import preview
 
 from duckietownrl.gym_duckietown.envs.duckietown_env import DuckietownEnv
 from duckietownrl.gym_duckietown.simulator import Simulator
@@ -89,7 +90,7 @@ import cv2
 
 
 class Wrapper(DuckietownEnv):
-    def __init__(self, env):
+    def __init__(self, env, preview_observation=True):
         keys_to_keep = [
             "map_name",
             "distortion",
@@ -106,6 +107,7 @@ class Wrapper(DuckietownEnv):
         self.wrappers_list = []
         super().__init__(**kwargs)
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
+        self.prewiev_observation = preview_observation
 
     def append_wrapper(self, wrapper):
         self.wrappers_list.append(wrapper)
@@ -118,6 +120,9 @@ class Wrapper(DuckietownEnv):
     def apply_transformation(self, img):
         for wrapper in self.wrappers_list:
             img = wrapper.apply_transformation(img)
+        if self.prewiev_observation:
+            cv2.imshow("Preview Observation", img)
+            cv2.waitKey(1)
         return img
 
     def step(self, action):
