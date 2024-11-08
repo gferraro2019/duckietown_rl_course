@@ -24,11 +24,11 @@ A Reinforcement Learning Course with DuckieTown.
 ## TRAINING A MODEL WITH SAC:
 The following script can run several environments in parallel and collect experience in the same Replay Buffer
 
-### FOR A STANDARD VERSION:
+### For a standard version:
 `python duckietownrl/parallel_training.py`
 
-### FOR IMITATION LEARNING WITH JOYSTICK:
-To activate and deactivate the joystick control, press the j key. By default, the joystick is activated, and you have to move with it to collect a new experience; otherwise, it returns, and no steps are done. Once you finish manually controlling, press the j key to let the agent train on his own.
+### For imitation learning with the joystick:
+Press the j key to activate and deactivate the joystick control. By default, the joystick is activated, and you have to move with it to collect a new experience; otherwise, it returns, and no steps are done. Once you finish manually controlling, press the j key to let the agent train independently.
 
 `python duckietownrl/parallel_training_imitation_learning.py`
 
