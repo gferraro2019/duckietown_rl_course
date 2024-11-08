@@ -3,15 +3,15 @@ A Reinforcement Learning Course with DuckieTown.
 
 ## INSTALLATION:
 
-### 0. Create the conda environnment:
+### 0. Create the conda environment:
 `conda env create -f environment.yaml`
 
-### 1. Activate the new conda environnment:
+### 1. Activate the new conda environment:
 `conda activate duckietownrl`
 
 ## UNINSTALLATION:
 
-### To remove the conda environnment:
+### To remove the conda environment:
 `conda remove -n duckietownrl --all`
 
 ## SIMULATOR:
@@ -22,13 +22,13 @@ A Reinforcement Learning Course with DuckieTown.
 `./joystick_control.py`
 
 ## TRAINING A MODEL WITH SAC:
-The following script can run several environments in parallel and collecte experience in the same Replay Buffer
+The following script can run several environments in parallel and collect experience in the same Replay Buffer
 
 ### FOR A STANDARD VERSION:
 `python duckietownrl/parallel_training.py`
 
 ### FOR IMITATION LEARNING WITH JOYSTICK:
-To activate and desactivate the control with the joystic press the j key. By default the joystick is activated and you have to nove with it to collect a new experience otherwhise it returns and no step are done. Once you finished to manually control press the j key to let the agent training on his own.
+To activate and deactivate the joystick control, press the j key. By default, the joystick is activated, and you have to move with it to collect a new experience; otherwise, it returns, and no steps are done. Once you finish manually controlling, press the j key to let the agent train on his own.
 
 `python duckietownrl/parallel_training_imitation_learning.py`
 
