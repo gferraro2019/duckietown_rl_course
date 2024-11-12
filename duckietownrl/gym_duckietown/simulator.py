@@ -265,6 +265,10 @@ class Simulator(gym.Env):
         :param style: String that represent which tiles will be loaded. One of ["photos", "synthetic"]
         :param enable_leds: Enables LEDs drawing.
         """
+
+        self.max_speed = -1.2
+        self.max_dist = 0
+
         self.enable_leds = enable_leds
         information = get_graphics_information()
         logger.info(
@@ -320,7 +324,7 @@ class Simulator(gym.Env):
         # Produce graphical output
         self.graphics = True
 
-        # Two-tuple of wheel torques, each in the range [-1, 1]
+        # Two-tuple of wheel torques, each in the range [-2, 1]
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
 
         self.camera_width = camera_width
@@ -1245,17 +1249,17 @@ class Simulator(gym.Env):
                 np.array(
                     [
                         [
-                            [-0.20, 0, -0.50],
-                            [-0.20, 0, -0.25],
-                            [-0.20, 0, 0.25],
-                            [-0.20, 0, 0.50],
+                            [-2, 0, -0.50],
+                            [-2, 0, -0.25],
+                            [-2, 0, 0.25],
+                            [-2, 0, 0.50],
                         ],
-                        [
-                            [0.20, 0, 0.50],
-                            [0.20, 0, 0.25],
-                            [0.20, 0, -0.25],
-                            [0.20, 0, -0.50],
-                        ],
+                        # [
+                        #     [0.20, 0, 0.50],
+                        #     [0.20, 0, 0.25],
+                        #     [0.20, 0, -0.25],
+                        #     [0.20, 0, -0.50],
+                        # ],
                     ]
                 )
                 * self.road_tile_size
@@ -1266,17 +1270,17 @@ class Simulator(gym.Env):
                 np.array(
                     [
                         [
-                            [-0.20, 0, -0.50],
-                            [-0.20, 0, 0.00],
-                            [0.00, 0, 0.20],
-                            [0.50, 0, 0.20],
+                            [-2, 0, -0.50],
+                            [-2, 0, 0.00],
+                            [-2, 0, 0.20],
+                            [-2, 0, 0.20],
                         ],
-                        [
-                            [0.50, 0, -0.20],
-                            [0.30, 0, -0.20],
-                            [0.20, 0, -0.30],
-                            [0.20, 0, -0.50],
-                        ],
+                        # [
+                        #     [0.50, 0, -0.20],
+                        #     [0.30, 0, -0.20],
+                        #     [0.20, 0, -0.30],
+                        #     [0.20, 0, -0.50],
+                        # ],
                     ]
                 )
                 * self.road_tile_size
@@ -1287,17 +1291,17 @@ class Simulator(gym.Env):
                 np.array(
                     [
                         [
-                            [-0.20, 0, -0.50],
-                            [-0.20, 0, -0.20],
-                            [-0.30, 0, -0.20],
-                            [-0.50, 0, -0.20],
+                            [-2, 0, -0.50],
+                            [-2, 0, -0.20],
+                            [-2, 0, -0.20],
+                            [-2, 0, -0.20],
                         ],
-                        [
-                            [-0.50, 0, 0.20],
-                            [-0.30, 0, 0.20],
-                            [0.30, 0, 0.00],
-                            [0.20, 0, -0.50],
-                        ],
+                        # [
+                        #     [-0.50, 0, 0.20],
+                        #     [-0.30, 0, 0.20],
+                        #     [0.30, 0, 0.00],
+                        #     [0.20, 0, -0.50],
+                        # ],
                     ]
                 )
                 * self.road_tile_size
@@ -1449,7 +1453,7 @@ class Simulator(gym.Env):
 
         # Closest curve = one with largest dotprod
         cps = curves[np.argmax(dot_prods)]
-
+        # print(cps)
         # Find closest point and tangent to this curve
         t = bezier_closest(cps, pos)
         point = bezier_point(cps, t)
@@ -1810,12 +1814,20 @@ class Simulator(gym.Env):
             #     if y < self.y:
             #         reward = speed
             # diff_angle = abs(self.angle_difference_rad(angle, self.previous_angle))
-            if speed >= 0:
-                reward = +1.0 * speed * lp.dot_dir + -10 * np.abs(lp.dist)
-            else:
-                reward = speed * 10
 
-        return reward
+            dist = np.abs(lp.dist)
+            if speed > self.max_speed:
+                self.max_speed = speed
+
+            if dist > self.max_dist:
+                self.max_dist = dist
+
+            if speed >= 0:
+                reward = self.max_dist * speed * lp.dot_dir - self.max_speed * dist
+            else:
+                reward = -self.max_speed * 2 + speed - dist
+
+        return reward * 10
 
     def normalize_angle_rad(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
