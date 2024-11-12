@@ -63,8 +63,8 @@ args = parser.parse_args()
 
 
 n_frames = 3
-n_envs = 1
-resize_shape = (28, 21)  # (width,height)
+n_envs = 4
+resize_shape = (28, 28)  # (width,height)
 envs = []
 k = 0
 for i in range(n_envs):
@@ -75,8 +75,8 @@ for i in range(n_envs):
         domain_rand=args.domain_rand,
         max_steps=args.max_steps,
         seed=args.seed + k,
-        window_width=800,
-        window_height=600,
+        window_width=80,
+        window_height=60,
         camera_width=resize_shape[0],
         camera_height=resize_shape[1],
     )
@@ -106,12 +106,12 @@ obs = np.stack(l_obs, axis=0)
 batch_size = 64
 state_dim = (n_frames, *reversed(resize_shape))  # Shape of state input (4, 84, 84)
 action_dim = 2
-if os.path.isfile("replay_buffer"):
+if os.path.isfile("replay_buffer_not"):
     replay_buffer = load_replay_buffer()
     saturate_replay_buffer(replay_buffer)
 else:
     replay_buffer = ReplayBuffer(
-        200_000,
+        500_000,
         batch_size,
         state_dim,
         action_dim,
@@ -127,11 +127,19 @@ agent = SAC(
     envs[0].action_space.shape[0],
     replay_buffer=replay_buffer,
     device=device,
+    actor_lr=0.001,
 )
+
+# # Load model
+# folder_name = "20241108_172952"
+# fl = "6400"
+# path = "/media/g.ferraro/DONNEES"
+# agent.load_weights(path, folder_name, fl)
+
 tot_episodes = 0
 timesteps = 0
 probability_training = 1.0
-save_on_episodes = 200
+save_on_episodes = 100
 running_avg_reward = 0
 
 folder_name = os.path.join("models", f"{datetime.now().strftime('%Y%m%d_%H%M%S')}")

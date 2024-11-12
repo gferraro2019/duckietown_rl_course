@@ -181,19 +181,15 @@ class SAC:
         )
 
     def load_weights(self, path, folder_name, n_eactions_valuesodes):
-        self.policy_network.load_state_dict(
-            torch.load(
-                op.join(
-                    path,
-                    "models",
-                    folder_name,
-                    self.env_name
-                    + "_policy_"
-                    + str(n_eactions_valuesodes)
-                    + "_weights.pth",
-                )
-            )
+        print("loading model...")
+        filepath = op.join(
+            path,
+            "models",
+            folder_name,
+            self.env_name + "_policy_" + str(n_eactions_valuesodes) + "_weights.pth",
         )
+        self.policy_network.load_state_dict(torch.load(filepath))
+        print(f"...model {filepath} loaded.")
 
     def set_to_eval_mode(self):
         self.policy_network.eval()
