@@ -1249,17 +1249,17 @@ class Simulator(gym.Env):
                 np.array(
                     [
                         [
-                            [-2, 0, -0.50],
-                            [-2, 0, -0.25],
-                            [-2, 0, 0.25],
-                            [-2, 0, 0.50],
+                            [-0.20, 0, -0.50],
+                            [-0.20, 0, -0.25],
+                            [-0.20, 0, 0.25],
+                            [-0.20, 0, 0.50],
                         ],
-                        # [
-                        #     [0.20, 0, 0.50],
-                        #     [0.20, 0, 0.25],
-                        #     [0.20, 0, -0.25],
-                        #     [0.20, 0, -0.50],
-                        # ],
+                        [
+                            [0.20, 0, 0.50],
+                            [0.20, 0, 0.25],
+                            [0.20, 0, -0.25],
+                            [0.20, 0, -0.50],
+                        ],
                     ]
                 )
                 * self.road_tile_size
@@ -1270,17 +1270,17 @@ class Simulator(gym.Env):
                 np.array(
                     [
                         [
-                            [-2, 0, -0.50],
-                            [-2, 0, 0.00],
-                            [-2, 0, 0.20],
-                            [-2, 0, 0.20],
+                            [-0.20, 0, -0.50],
+                            [-0.20, 0, 0.00],
+                            [0.00, 0, 0.20],
+                            [0.50, 0, 0.20],
                         ],
-                        # [
-                        #     [0.50, 0, -0.20],
-                        #     [0.30, 0, -0.20],
-                        #     [0.20, 0, -0.30],
-                        #     [0.20, 0, -0.50],
-                        # ],
+                        [
+                            [0.50, 0, -0.20],
+                            [0.30, 0, -0.20],
+                            [0.20, 0, -0.30],
+                            [0.20, 0, -0.50],
+                        ],
                     ]
                 )
                 * self.road_tile_size
@@ -1291,17 +1291,17 @@ class Simulator(gym.Env):
                 np.array(
                     [
                         [
-                            [-2, 0, -0.50],
-                            [-2, 0, -0.20],
-                            [-2, 0, -0.20],
-                            [-2, 0, -0.20],
+                            [-0.20, 0, -0.50],
+                            [-0.20, 0, -0.20],
+                            [-0.30, 0, -0.20],
+                            [-0.50, 0, -0.20],
                         ],
-                        # [
-                        #     [-0.50, 0, 0.20],
-                        #     [-0.30, 0, 0.20],
-                        #     [0.30, 0, 0.00],
-                        #     [0.20, 0, -0.50],
-                        # ],
+                        [
+                            [-0.50, 0, 0.20],
+                            [-0.30, 0, 0.20],
+                            [0.30, 0, 0.00],
+                            [0.20, 0, -0.50],
+                        ],
                     ]
                 )
                 * self.road_tile_size
@@ -1815,19 +1815,19 @@ class Simulator(gym.Env):
             #         reward = speed
             # diff_angle = abs(self.angle_difference_rad(angle, self.previous_angle))
 
-            dist = np.abs(lp.dist)
-            if speed > self.max_speed:
-                self.max_speed = speed
+            # dist = np.abs(lp.dist)
+            # if speed > self.max_speed:
+            #     self.max_speed = speed
 
-            if dist > self.max_dist:
-                self.max_dist = dist
+            # if dist > self.max_dist:
+            #     self.max_dist = dist
 
             if speed >= 0:
-                reward = self.max_dist * speed * lp.dot_dir - self.max_speed * dist
+                reward = speed * lp.dist * 100
             else:
-                reward = -self.max_speed * 2 + speed - dist
+                reward = speed + lp.dist * 100
 
-        return reward * 10
+        return reward
 
     def normalize_angle_rad(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
