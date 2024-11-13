@@ -3,3 +3,4 @@
 *replay_buffer
 *.log
 *wandb/*
+*/wandb*
