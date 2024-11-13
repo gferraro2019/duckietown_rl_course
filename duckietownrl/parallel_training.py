@@ -58,6 +58,7 @@ args = parser.parse_args()
 
 
 n_frames = 3
+n_chans = 3  # 1 for B/W images 3 for RGBs
 n_envs = 1
 resize_shape = (28, 28)  # (width,height)
 envs = []
@@ -77,9 +78,9 @@ for i in range(n_envs):
     )
     k += 1
     # wrapping the environment
-    env = Wrapper_StackObservation(env, n_frames)
-    # env.append_wrapper(Wrapper_Resize(env, shape=resize_shape))
-    env.append_wrapper(Wrapper_BW(env))
+    env = Wrapper_StackObservation(env, n_frames, n_chans=n_chans)
+    if n_chans == 1:
+        env.append_wrapper(Wrapper_BW(env))
     env.append_wrapper(Wrapper_NormalizeImage(env))
 
     env.reset()
@@ -94,15 +95,15 @@ l_obs = []
 obs, _, _, _ = env.step(np.array([0, 0], dtype=np.float32))
 
 for _ in envs:
-    l_obs.append(obs)
+    l_obs.append(np.asarray(obs))
 obs = np.stack(l_obs, axis=0)
 
 # create replay buffer
-batch_size = 64
-state_dim = (n_frames, *resize_shape)  # Shape of state input (4, 84, 84)
+batch_size = 128
+state_dim = (n_frames * n_chans, *resize_shape)  # Shape of state input (4, 84, 84)
 action_dim = 2
 replay_buffer = ReplayBuffer(
-    500_000, batch_size, state_dim, action_dim, normalize_rewards=False, device=device
+    100_000, batch_size, state_dim, action_dim, normalize_rewards=False, device=device
 )
 # replay_buffer = load_replay_buffer()
 
@@ -113,11 +114,13 @@ agent = SAC(
     envs[0].action_space.shape[0],
     replay_buffer=replay_buffer,
     device=device,
+    actor_lr=0.001,
 )
+
 tot_episodes = 0
 timesteps = 0
 probability_training = 1.0
-save_on_episodes = 200
+save_on_episodes = 100
 running_avg_reward = 0
 
 folder_name = os.path.join("models", f"{datetime.now().strftime('%Y%m%d_%H%M%S')}")
@@ -142,12 +145,8 @@ def update(dt):
     dones = []
 
     action = agent.select_action(torch.tensor(obs, dtype=torch.float32).to(device))
-    # noise = np.random.randint(-300, 300, (n_envs, 2)) * 0.0001
-    # noisy_action = action + noise
 
-    # add noise to actions
     for i, env in enumerate(envs):
-        # next_obs, reward, done, info = env.step(noisy_action[i])
         next_obs, reward, done, info = env.step(action[i])
         next_observations.append(next_obs)
         rewards.append(reward)
@@ -165,7 +164,6 @@ def update(dt):
     next_obs = np.stack(next_observations, axis=0)
     reward = np.stack(rewards, axis=0)
     done = np.stack(dones, axis=0)
-    # action = noisy_action
 
     next_observations.clear()
     rewards.clear()
@@ -219,6 +217,4 @@ def update(dt):
 dt = 0.001
 t = time.time()
 while True:
-    # if time.time() - t > dt:
     update(dt)
-    # t = time.time()

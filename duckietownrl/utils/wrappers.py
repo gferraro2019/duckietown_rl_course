@@ -191,12 +191,13 @@ class Wrapper_NormalizeImage(Wrapper):
 
 
 class Wrapper_StackObservation(Wrapper):
-    def __init__(self, env, n_obs):
+    def __init__(self, env, n_obs, n_chans=1):
         self.n_obs = n_obs
         self.observations_stack = []
         self.rewards_stack = []
         self.dones_stack = []
         self.infos_stack = []
+        self.n_chans = n_chans
 
         super().__init__(env)
         image_height, image_width, channels = self.observation_space.shape
@@ -235,8 +236,15 @@ class Wrapper_StackObservation(Wrapper):
         obs = super().reset()
         for _ in range(self.n_obs):
             self.stack_observation(obs)
+        if self.n_chans == 1:
+            observation = np.array(self.observations_stack)
+        else:
+            observation = np.concatenate(self.observations_stack, axis=-1)
+            a, b, c = observation.shape
+            observation = observation.reshape(c, a, b)
+
         return (
-            self.observations_stack,
+            observation,
             sum(self.rewards_stack) / self.n_obs,
             True if 1 == sum(self.dones_stack) else False,
             self.infos_stack,
@@ -245,8 +253,14 @@ class Wrapper_StackObservation(Wrapper):
     def step(self, action):
         obs = super().step(action)
         self.stack_observation(obs)
+        if self.n_chans == 1:
+            observation = np.array(self.observations_stack)
+        else:
+            observation = np.concatenate(self.observations_stack, axis=-1)
+            a, b, c = observation.shape
+            observation = observation.reshape(c, a, b)
         return (
-            self.observations_stack,
+            observation,
             sum(self.rewards_stack) / self.n_obs,
             True if 1 == sum(self.dones_stack) else False,
             self.infos_stack,
