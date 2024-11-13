@@ -268,6 +268,7 @@ class Simulator(gym.Env):
 
         self.max_speed = -1.2
         self.max_dist = 0
+        self.buffer_directions = [0 for _ in range(10)]
 
         self.enable_leds = enable_leds
         information = get_graphics_information()
@@ -579,6 +580,7 @@ class Simulator(gym.Env):
 
         # Robot's current speed
         self.speed = 0.0
+        self.buffer_directions = [0 for _ in range(10)]
 
         if self.randomize_maps_on_reset:
             map_name = self.np_random.choice(self.map_names)
@@ -1821,13 +1823,15 @@ class Simulator(gym.Env):
 
             # if dist > self.max_dist:
             #     self.max_dist = dist
+            self.buffer_directions.append(lp.dot_dir)
+            self.buffer_directions.pop(0)
 
             if speed >= 0:
                 reward = speed * lp.dist * 100
             else:
                 reward = speed + lp.dist * 100
 
-        return reward
+        return reward + sum(self.buffer_directions)
 
     def normalize_angle_rad(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
