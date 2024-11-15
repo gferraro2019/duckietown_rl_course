@@ -188,6 +188,7 @@ class SAC:
             folder_name,
             self.env_name + "_policy_" + str(n_eactions_valuesodes) + "_weights.pth",
         )
+        print(filepath)
         self.policy_network.load_state_dict(torch.load(filepath))
         print(f"...model {filepath} loaded.")
 
