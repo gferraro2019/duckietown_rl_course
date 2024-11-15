@@ -1826,12 +1826,17 @@ class Simulator(gym.Env):
             self.buffer_directions.append(lp.dot_dir)
             self.buffer_directions.pop(0)
 
+            print(lp.dist)
             if speed >= 0:
-                reward = speed * lp.dist * 100
+                if lp.dist <= 0.06:
+                    reward = speed * lp.dist * 100
+                else:
+                    reward = speed + lp.dist * 100 * -1
+
             else:
                 reward = speed + lp.dist * 100
 
-        return reward + sum(self.buffer_directions)
+        return reward  # + sum(self.buffer_directions) / 10
 
     def normalize_angle_rad(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
