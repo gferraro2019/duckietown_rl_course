@@ -265,7 +265,7 @@ class Simulator(gym.Env):
         :param style: String that represent which tiles will be loaded. One of ["photos", "synthetic"]
         :param enable_leds: Enables LEDs drawing.
         """
-
+        self.last_dot_dir = -1
         self.max_speed = -1.2
         self.max_dist = 0
         self.buffer_directions = [0 for _ in range(10)]
@@ -1826,17 +1826,20 @@ class Simulator(gym.Env):
             self.buffer_directions.append(lp.dot_dir)
             self.buffer_directions.pop(0)
 
+            reward = self.last_dot_dir - lp.dot_dir
+            self.last_dot_dir = lp.dot_dir
+
             print(lp.dist)
             if speed >= 0:
                 if lp.dist <= 0.06:
-                    reward = speed * lp.dist * 100
+                    reward += speed * lp.dist * 100
                 else:
-                    reward = speed + lp.dist * 100 * -1
+                    reward += speed + lp.dist * 100 * -1
 
             else:
-                reward = speed + lp.dist * 100
+                reward += speed + lp.dist * 100
 
-        return reward + sum(self.buffer_directions) - 10
+        return reward  # + sum(self.buffer_directions) - 10
 
     def normalize_angle_rad(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
