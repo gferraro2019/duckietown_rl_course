@@ -1836,7 +1836,7 @@ class Simulator(gym.Env):
             else:
                 reward = speed + lp.dist * 100
 
-        return reward  # + sum(self.buffer_directions) / 10
+        return reward + sum(self.buffer_directions) - 10
 
     def normalize_angle_rad(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi

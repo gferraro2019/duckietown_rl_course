@@ -63,7 +63,7 @@ args = parser.parse_args()
 
 
 n_frames = 3
-n_envs = 4
+n_envs = 1
 resize_shape = (28, 28)  # (width,height)
 envs = []
 k = 0
@@ -75,8 +75,8 @@ for i in range(n_envs):
         domain_rand=args.domain_rand,
         max_steps=args.max_steps,
         seed=args.seed + k,
-        window_width=80,
-        window_height=60,
+        window_width=800,
+        window_height=600,
         camera_width=resize_shape[0],
         camera_height=resize_shape[1],
     )
@@ -188,6 +188,9 @@ def on_key_press(symbol, modifiers):
         stop_collecting = not stop_collecting
 
 
+once = True
+
+
 def update(dt):
     global obs
     global tot_episodes
@@ -196,6 +199,7 @@ def update(dt):
     global running_avg_reward
     global eps_returns
     global stop_collecting
+    global once
     """
     This function is called at every frame to handle
     movement/stepping and redrawing
@@ -266,8 +270,9 @@ def update(dt):
     for env in envs[-4:]:
         env.render(mode="human")
 
-    if tot_episodes > 0 and tot_episodes % save_on_episodes == 0:
+    if tot_episodes > 0 and tot_episodes % save_on_episodes == 0 and once:
         agent.save(path, folder_name, tot_episodes)
+        once = False
 
     if True in done:
         idx = np.where(done)[0]
@@ -282,6 +287,7 @@ def update(dt):
             # env.render()
             tot_episodes += 1
             eps_returns[id] = 0.0
+            once = True
 
     timesteps += 1
 

@@ -127,6 +127,7 @@ folder_name = os.path.join("models", f"{datetime.now().strftime('%Y%m%d_%H%M%S')
 path = "/media/g.ferraro/DONNEES"
 
 eps_returns = np.zeros(n_envs)
+once = True
 
 
 def update(dt):
@@ -136,6 +137,7 @@ def update(dt):
     global probability_training
     global running_avg_reward
     global eps_returns
+    global once
     """
     This function is called at every frame to handle
     movement/stepping and redrawing
@@ -194,8 +196,9 @@ def update(dt):
     for env in envs[-4:]:
         env.render(mode="human")
 
-    if tot_episodes > 0 and tot_episodes % save_on_episodes == 0:
+    if tot_episodes > 0 and tot_episodes % save_on_episodes == 0 and once:
         agent.save(path, folder_name, tot_episodes)
+        once = False
 
     if True in done:
         idx = np.where(done)[0]
@@ -210,6 +213,7 @@ def update(dt):
             # env.render()
             tot_episodes += 1
             eps_returns[id] = 0.0
+            once = True
 
     timesteps += 1
 
