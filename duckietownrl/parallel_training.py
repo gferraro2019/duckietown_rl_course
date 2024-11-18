@@ -193,9 +193,6 @@ def update(dt):
 
     obs = next_obs
 
-    for env in envs[-4:]:
-        env.render(mode="human")
-
     if tot_episodes > 0 and tot_episodes % save_on_episodes == 0 and once:
         agent.save(path, folder_name, tot_episodes)
         once = False
@@ -208,12 +205,16 @@ def update(dt):
             print(f"env N.{id} done!")
             wandb.log({"ep_return": eps_returns[id], "step_count": env.step_count})
             obs_env = env.reset()
+            env.render()
             obs[id] = np.stack(obs_env[0], axis=0)
 
             # env.render()
             tot_episodes += 1
             eps_returns[id] = 0.0
             once = True
+
+    for env in envs[-4:]:
+        env.render(mode="human")
 
     timesteps += 1
 
