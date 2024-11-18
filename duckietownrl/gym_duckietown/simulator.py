@@ -1780,6 +1780,7 @@ class Simulator(gym.Env):
     def compute_reward(self, pos, angle, speed):
         # Compute the collision avoidance penalty
         col_penalty = self.proximity_penalty2(pos, angle)
+        reward = -1
 
         # Get the position relative to the right lane tangent
         try:
@@ -1791,54 +1792,44 @@ class Simulator(gym.Env):
             timestep_cost = 0
             # Compute the reward
 
-            # x, z, y = pos
-            # y1 = 0.05
-            # y2 = 0.4
-            # y3 = 1.43
-            # y4 = 1.65
-            # x1 = 0.05
-            # x2 = 0.4
-            # x3 = 1.43
-            # x4 = 1.65
-            # reward = -1
-            # if y1 <= y and y <= y2:
-            #     if x < self.x:
-            #         reward = speed
-            # elif y3 <= y and y <= y4:
-            #     if x > self.x:
-            #         reward = speed
-
-            # elif x1 <= x and x <= x2:
-            #     if y > self.y:
-            #         reward = speed
-
-            # elif x3 <= x and x <= x4:
-            #     if y < self.y:
-            #         reward = speed
-            # diff_angle = abs(self.angle_difference_rad(angle, self.previous_angle))
-
-            # dist = np.abs(lp.dist)
-            # if speed > self.max_speed:
-            #     self.max_speed = speed
-
-            # if dist > self.max_dist:
-            #     self.max_dist = dist
-            self.buffer_directions.append(lp.dot_dir)
-            self.buffer_directions.pop(0)
-
-            reward = self.last_dot_dir - lp.dot_dir
-            self.last_dot_dir = lp.dot_dir
-
-            print(lp.dist)
-            if speed >= 0:
-                if lp.dist <= 0.06:
-                    reward += speed * lp.dist * 100
-                else:
-                    reward += speed + lp.dist * 100 * -1
-
+            x, z, y = pos
+            border_start = 2.22
+            border_finish = 0.71
+            delta = 0.10
+            if speed <= 0:
+                reward = -1
             else:
-                reward += speed + lp.dist * 100
+                if y >= border_start - delta and y <= border_start:
+                    if x > self.x:
+                        reward = speed * 10
+                elif y >= border_finish and y <= border_finish + delta:
+                    if x < self.x:
+                        reward = speed * 10
+                elif x >= border_start - delta and x <= border_start:
+                    if y < self.y:
+                        reward = speed * 10
+                elif x >= border_finish and x <= border_finish + delta:
+                    if y > self.y:
+                        reward = speed * 10
 
+            self.x = x
+            self.y = y
+            # self.buffer_directions.append(lp.dot_dir)
+            # self.buffer_directions.pop(0)
+
+            # reward = self.last_dot_dir - lp.dot_dir
+            # self.last_dot_dir = lp.dot_dir
+
+            # print(lp.dist)
+            # if speed >= 0:
+            #     if lp.dist <= 0.06:
+            #         reward += speed * lp.dist * 100
+            #     else:
+            #         reward += speed + lp.dist * 100 * -1
+
+            # else:
+            #     reward += speed + lp.dist * 100
+        print(pos)
         return reward  # + sum(self.buffer_directions) - 10
 
     def normalize_angle_rad(self, angle):
