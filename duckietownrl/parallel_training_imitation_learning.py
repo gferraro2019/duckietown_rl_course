@@ -56,15 +56,31 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--max-steps", action="store_true", default=1500, help="number of steps per episode"
+    "--max-steps", action="store_true", default=600, help="number of steps per episode"
 )
+
+parser.add_argument("--batch_size", default=512, type=int)
+parser.add_argument("--replay_buffer_size", default=50_000, type=int)
+parser.add_argument("--save_on_episode", default=100, type=int)
+parser.add_argument("--width_frame", default=28, type=int)
+parser.add_argument("--height_frame", default=28, type=int)
+parser.add_argument("--width_preview", default=80, type=int)
+parser.add_argument("--height_preview", default=60, type=int)
+
+parser.add_argument("--n_chans", default=1, type=int)
+parser.add_argument("--n_frames", default=3, type=int)
+parser.add_argument("--n_envs", default=1, type=int)
+parser.add_argument("--tau", default=0.001, type=float)
+parser.add_argument("--reward_invalid_pose", default=-1000, type=int)
+parser.add_argument("--alpha", default=0.05, type=float)
+
 
 args = parser.parse_args()
 
 
-n_frames = 3
-n_envs = 1
-resize_shape = (28, 28)  # (width,height)
+n_frames = args.n_frames
+n_envs = args.n_envs
+resize_shape = (args.width_frame, args.height_frame)  # (width,height)
 envs = []
 k = 0
 for i in range(n_envs):
@@ -75,10 +91,11 @@ for i in range(n_envs):
         domain_rand=args.domain_rand,
         max_steps=args.max_steps,
         seed=args.seed + k,
-        window_width=800,
-        window_height=600,
+        window_width=args.width_preview,
+        window_height=args.height_preview,
         camera_width=resize_shape[0],
         camera_height=resize_shape[1],
+        reward_invalid_pose=args.reward_invalid_pose,
     )
     k += 1
     # wrapping the environment
@@ -88,9 +105,10 @@ for i in range(n_envs):
     env.append_wrapper(Wrapper_NormalizeImage(env))
 
     env.reset()
-    env.render(mode="human")
+    env.render(mode="rgb_array")
     envs.append(env)
 
+env.render(mode="human")
 
 device = "cuda"
 
@@ -103,7 +121,7 @@ for _ in envs:
 obs = np.stack(l_obs, axis=0)
 
 # create replay buffer
-batch_size = 64
+batch_size = args.batch_size
 state_dim = (n_frames, *reversed(resize_shape))  # Shape of state input (4, 84, 84)
 action_dim = 2
 if os.path.isfile("replay_buffer_not"):
@@ -111,7 +129,7 @@ if os.path.isfile("replay_buffer_not"):
     saturate_replay_buffer(replay_buffer)
 else:
     replay_buffer = ReplayBuffer(
-        500_000,
+        args.replay_buffer_size,
         batch_size,
         state_dim,
         action_dim,
@@ -128,6 +146,7 @@ agent = SAC(
     replay_buffer=replay_buffer,
     device=device,
     actor_lr=0.001,
+    tau=args.tau,
 )
 
 # # Load model
@@ -139,7 +158,7 @@ agent = SAC(
 tot_episodes = 0
 timesteps = 0
 probability_training = 1.0
-save_on_episodes = 100
+save_on_episodes = args.save_on_episode
 running_avg_reward = 0
 
 folder_name = os.path.join("models", f"{datetime.now().strftime('%Y%m%d_%H%M%S')}")
@@ -177,10 +196,10 @@ def on_key_press(symbol, modifiers):
     if symbol == key.BACKSPACE or symbol == key.SLASH:
         print("RESET")
         env.reset()
-        env.render()
+        env.render("rgb_array")
     elif symbol == key.PAGEUP:
         env.unwrapped.cam_angle[0] = 0
-        env.render()
+        env.render("rgb_array")
     elif symbol == key.ESCAPE:
         env.close()
         sys.exit(0)
@@ -189,6 +208,7 @@ def on_key_press(symbol, modifiers):
 
 
 once = True
+collect_random_timesteps = 1000
 
 
 def update(dt):
@@ -200,6 +220,7 @@ def update(dt):
     global eps_returns
     global stop_collecting
     global once
+    global collect_random_timesteps
     """
     This function is called at every frame to handle
     movement/stepping and redrawing
@@ -214,8 +235,15 @@ def update(dt):
             return
         else:
             action = action_from_joystick()
+
     else:
-        action = agent.select_action(torch.tensor(obs, dtype=torch.float32).to(device))
+        if timesteps < collect_random_timesteps:
+            action = 2 * torch.rand(1, 2) - 1
+        else:
+            action = agent.select_action(
+                torch.tensor(obs, dtype=torch.float32).to(device)
+            )
+
     # noise = np.random.randint(-300, 300, (n_envs, 2)) * 0.0001
     # noisy_action = action + noise
 
@@ -262,7 +290,10 @@ def update(dt):
     replay_buffer.add(obs, next_obs, action, reward, done)
 
     # Train with a certain probability for computing efficiency
-    if np.random.random() < probability_training:
+    if (
+        np.random.random() < probability_training
+        and timesteps >= collect_random_timesteps
+    ):
         agent.train(timesteps, device)
 
     obs = next_obs
@@ -279,15 +310,15 @@ def update(dt):
             print(f"env N.{id} done!")
             wandb.log({"ep_return": eps_returns[id], "step_count": env.step_count})
             obs_env = env.reset()
-            env.render()
+            env.render("rgb_array")
             obs[id] = np.stack(obs_env[0], axis=0)
 
-            # env.render()
+            # env.render("rgb_array")
             tot_episodes += 1
             eps_returns[id] = 0.0
             once = True
 
-    for env in envs[-4:]:
+    for env in envs[-1:]:
         env.render(mode="human")
 
     timesteps += 1
