@@ -172,7 +172,7 @@ DEFAULT_FRAME_SKIP = 1
 
 DEFAULT_ACCEPT_START_ANGLE_DEG = 60
 
-REWARD_INVALID_POSE = -100
+REWARD_INVALID_POSE = -1000
 
 MAX_SPAWN_ATTEMPTS = 5000
 
@@ -241,6 +241,7 @@ class Simulator(gym.Env):
         color_sky: Sequence[float] = BLUE_SKY,
         style: str = "photos",
         enable_leds: bool = False,
+        reward_invalid_pose=REWARD_INVALID_POSE,
     ):
         """
 
@@ -265,6 +266,8 @@ class Simulator(gym.Env):
         :param style: String that represent which tiles will be loaded. One of ["photos", "synthetic"]
         :param enable_leds: Enables LEDs drawing.
         """
+        self.reward_invalid_pose = reward_invalid_pose
+
         self.last_dot_dir = -1
         self.max_speed = -1.2
         self.max_dist = 0
@@ -1792,28 +1795,38 @@ class Simulator(gym.Env):
             timestep_cost = 0
             # Compute the reward
 
-            x, z, y = pos
-            border_start = 2.22
-            border_finish = 0.71
-            delta = 0.10
-            if speed <= 0:
-                reward = -1
-            else:
-                if y >= border_start - delta and y <= border_start:
-                    if x > self.x:
-                        reward = speed * 10
-                elif y >= border_finish and y <= border_finish + delta:
-                    if x < self.x:
-                        reward = speed * 10
-                elif x >= border_start - delta and x <= border_start:
-                    if y < self.y:
-                        reward = speed * 10
-                elif x >= border_finish and x <= border_finish + delta:
-                    if y > self.y:
-                        reward = speed * 10
+            # hard coded reward function
+            # x, z, y = pos
+            # border_start = 2.22
+            # border_finish = 0.71
+            # delta = 0.10
+            # if speed <= 0:
+            #     reward = -1
+            # else:
+            #     if y >= border_start - delta and y <= border_start:
+            #         if x > self.x:
+            #             reward = speed * 10
+            #     elif y >= border_finish and y <= border_finish + delta:
+            #         if x < self.x:
+            #             reward = speed * 10
+            #     elif x >= border_start - delta and x <= border_start:
+            #         if y < self.y:
+            #             reward = speed * 10
+            #     elif x >= border_finish and x <= border_finish + delta:
+            #         if y > self.y:
+            #             reward = speed * 10
 
-            self.x = x
-            self.y = y
+            # self.x = x
+            # self.y = y
+
+            reward = (
+                self.reward_invalid_pose * np.abs(lp.dist) * (1 - np.abs(lp.dot_dir))
+            )
+
+            # original reward
+            if speed < 0.2:
+                reward += 10 * (np.abs(speed) * -1 - 0.2)
+
             # self.buffer_directions.append(lp.dot_dir)
             # self.buffer_directions.pop(0)
 
@@ -1829,7 +1842,7 @@ class Simulator(gym.Env):
 
             # else:
             #     reward += speed + lp.dist * 100
-        print(pos)
+        print(lp.dist)
         return reward  # + sum(self.buffer_directions) - 10
 
     def normalize_angle_rad(self, angle):
@@ -1860,7 +1873,7 @@ class Simulator(gym.Env):
         if not self._valid_pose(self.cur_pos, self.cur_angle):
             msg = "Stopping the simulator because we are at an invalid pose."
             # logger.info(msg)
-            reward = REWARD_INVALID_POSE
+            reward = self.reward_invalid_pose  # REWARD_INVALID_POSE
             done_code = "invalid-pose"
             done = True
         # If the maximum time step count is reached
