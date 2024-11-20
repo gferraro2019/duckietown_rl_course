@@ -54,13 +54,29 @@ parser.add_argument(
     "--max-steps", action="store_true", default=1500, help="number of steps per episode"
 )
 
+parser.add_argument("--batch_size", default=64, type=int)
+parser.add_argument("--replay_buffer_size", default=50_000, type=int)
+parser.add_argument("--save_on_episode", default=100, type=int)
+parser.add_argument("--width_frame", default=28, type=int)
+parser.add_argument("--height_frame", default=28, type=int)
+parser.add_argument("--width_preview", default=80, type=int)
+parser.add_argument("--height_preview", default=60, type=int)
+
+parser.add_argument("--n_chans", default=1, type=int)
+parser.add_argument("--n_frames", default=3, type=int)
+parser.add_argument("--n_envs", default=1, type=int)
+parser.add_argument("--tau", default=0.005, type=float)
+parser.add_argument("--reward_invalid_pose", default=-100, type=int)
+parser.add_argument("--alpha", default=0.20, type=float)
+
+
 args = parser.parse_args()
 
 
-n_frames = 3
-n_chans = 3  # 1 for B/W images 3 for RGBs
-n_envs = 1
-resize_shape = (28, 28)  # (width,height)
+n_frames = args.n_frames
+n_chans = args.n_chans  # 1 for B/W images 3 for RGBs
+n_envs = args.n_envs
+resize_shape = (args.width_frame, args.height_frame)  # (width,height)
 envs = []
 k = 0
 for i in range(n_envs):
@@ -71,10 +87,11 @@ for i in range(n_envs):
         domain_rand=args.domain_rand,
         max_steps=args.max_steps,
         seed=args.seed + k,
-        window_width=60,
-        window_height=60,
+        window_width=args.width_preview,
+        window_height=args.height_preview,
         camera_width=resize_shape[0],
         camera_height=resize_shape[1],
+        reward_invalid_pose=args.reward_invalid_pose,
     )
     k += 1
     # wrapping the environment
@@ -99,11 +116,16 @@ for _ in envs:
 obs = np.stack(l_obs, axis=0)
 
 # create replay buffer
-batch_size = 128
+batch_size = args.batch_size
 state_dim = (n_frames * n_chans, *resize_shape)  # Shape of state input (4, 84, 84)
 action_dim = 2
 replay_buffer = ReplayBuffer(
-    100_000, batch_size, state_dim, action_dim, normalize_rewards=False, device=device
+    args.replay_buffer_size,
+    batch_size,
+    state_dim,
+    action_dim,
+    normalize_rewards=False,
+    device=device,
 )
 # replay_buffer = load_replay_buffer()
 
@@ -115,12 +137,14 @@ agent = SAC(
     replay_buffer=replay_buffer,
     device=device,
     actor_lr=0.001,
+    tau=args.tau,
+    alpha=args.alpha,
 )
 
 tot_episodes = 0
 timesteps = 0
 probability_training = 1.0
-save_on_episodes = 100
+save_on_episodes = args.save_on_episode
 running_avg_reward = 0
 
 folder_name = os.path.join("models", f"{datetime.now().strftime('%Y%m%d_%H%M%S')}")
