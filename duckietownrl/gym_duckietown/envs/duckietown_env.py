@@ -35,8 +35,6 @@ class DuckietownEnv(Simulator):
         # Wheel velocity limit
         self.limit = limit
 
-        self.seed = kwargs["seed"]
-
     def step(self, action):
         vel, angle = action
 
