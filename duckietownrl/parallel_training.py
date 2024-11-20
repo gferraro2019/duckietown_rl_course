@@ -152,6 +152,7 @@ path = "/media/g.ferraro/DONNEES"
 
 eps_returns = np.zeros(n_envs)
 once = True
+collect_random_timesteps = 1000
 
 
 def update(dt):
@@ -170,7 +171,10 @@ def update(dt):
     rewards = []
     dones = []
 
-    action = agent.select_action(torch.tensor(obs, dtype=torch.float32).to(device))
+    if timesteps < collect_random_timesteps:
+        action = 2 * torch.rand(1, 2) - 1
+    else:
+        action = agent.select_action(torch.tensor(obs, dtype=torch.float32).to(device))
 
     for i, env in enumerate(envs):
         next_obs, reward, done, info = env.step(action[i])
@@ -212,7 +216,10 @@ def update(dt):
     replay_buffer.add(obs, next_obs, action, reward, done)
 
     # Train with a certain probability for computing efficiency
-    if np.random.random() < probability_training:
+    if (
+        np.random.random() < probability_training
+        and timesteps >= collect_random_timesteps
+    ):
         agent.train(timesteps, device)
 
     obs = next_obs
