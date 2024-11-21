@@ -64,10 +64,10 @@ parser.add_argument("--replay_buffer_size", default=50_000, type=int)
 parser.add_argument("--save_on_episode", default=100, type=int)
 parser.add_argument("--width_frame", default=28, type=int)
 parser.add_argument("--height_frame", default=28, type=int)
-parser.add_argument("--width_preview", default=80, type=int)
-parser.add_argument("--height_preview", default=60, type=int)
+parser.add_argument("--width_preview", default=800, type=int)
+parser.add_argument("--height_preview", default=600, type=int)
 
-parser.add_argument("--n_chans", default=1, type=int)
+parser.add_argument("--n_chans", default=3, type=int)
 parser.add_argument("--n_frames", default=3, type=int)
 parser.add_argument("--n_envs", default=1, type=int)
 parser.add_argument("--tau", default=0.001, type=float)
@@ -79,6 +79,7 @@ args = parser.parse_args()
 
 
 n_frames = args.n_frames
+n_chans = args.n_chans
 n_envs = args.n_envs
 resize_shape = (args.width_frame, args.height_frame)  # (width,height)
 envs = []
@@ -99,9 +100,10 @@ for i in range(n_envs):
     )
     k += 1
     # wrapping the environment
-    env = Wrapper_StackObservation(env, n_frames)
+    env = Wrapper_StackObservation(env, n_frames, n_chans=n_chans)
     # env.append_wrapper(Wrapper_Resize(env, shape=resize_shape))
-    env.append_wrapper(Wrapper_BW(env))
+    if n_chans == 1:
+        env.append_wrapper(Wrapper_BW(env))
     env.append_wrapper(Wrapper_NormalizeImage(env))
 
     env.reset()
@@ -122,7 +124,10 @@ obs = np.stack(l_obs, axis=0)
 
 # create replay buffer
 batch_size = args.batch_size
-state_dim = (n_frames, *reversed(resize_shape))  # Shape of state input (4, 84, 84)
+state_dim = (
+    n_frames * n_chans,
+    *resize_shape,
+)  # Shape of state input (4, 84, 84)
 action_dim = 2
 if os.path.isfile("replay_buffer_not"):
     replay_buffer = load_replay_buffer()
