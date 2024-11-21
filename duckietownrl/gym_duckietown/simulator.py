@@ -3,6 +3,8 @@ import os
 from collections import namedtuple
 from ctypes import POINTER
 from dataclasses import dataclass
+import cv2
+import numpy as np
 
 import sys
 
@@ -1819,13 +1821,11 @@ class Simulator(gym.Env):
             # self.x = x
             # self.y = y
 
-            reward = (
-                self.reward_invalid_pose * np.abs(lp.dist) * (1 - np.abs(lp.dot_dir))
-            )
+            reward = (np.abs(lp.dist) ** 2) * (1 - np.abs(lp.dot_dir))
 
             # original reward
-            if speed < 0.2:
-                reward += 10 * (np.abs(speed) * -1 - 0.2)
+            if speed < 0.2 or speed > 0.4:
+                reward += 100 * (np.abs(speed) * -1 - 0.2)
 
             # self.buffer_directions.append(lp.dot_dir)
             # self.buffer_directions.pop(0)
@@ -1842,8 +1842,194 @@ class Simulator(gym.Env):
 
             # else:
             #     reward += speed + lp.dist * 100
-        print(lp.dist)
+
+        distance, action = self.process_line_image(self.img_array)
+        print(distance, action)
+        if speed >= 0:
+            reward = distance
+        else:
+            reward = -100
         return reward  # + sum(self.buffer_directions) - 10
+
+    # def process_line_image(self, image):
+    #     """
+    #     Processes an input image to detect a line, returns the distance from the line's centroid to the center of the image.
+
+    #     Parameters:
+    #     - image: A NumPy array representing the image to process.
+
+    #     Returns:
+    #     - A tuple containing:
+    #     - distance (int): The horizontal distance from the line's centroid to the center of the image.
+    #     - action (str): The action to take based on the distance from the line ("Turn Left", "Turn Right", "Move Forward", "No Line Detected").
+    #     """
+    #     # Step 1: Convert the image to grayscale
+    #     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    #     # Step 2: Apply a binary threshold (adjust threshold value as needed)
+    #     _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+
+    #     # Step 3: Find edges using Canny edge detector
+    #     edges = cv2.Canny(binary, 50, 150)
+
+    #     # Step 4: Find contours in the edges
+    #     contours, _ = cv2.findContours(
+    #         edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    #     )
+
+    #     # Step 5: Loop through the contours and find the centroid of the line
+    #     line_found = False
+    #     distance = 0
+    #     for contour in contours:
+    #         # Calculate moments of the contour
+    #         M = cv2.moments(contour)
+    #         if M["m00"] != 0:  # Avoid division by zero
+    #             # Calculate the centroid of the line
+    #             cX = int(M["m10"] / M["m00"])
+    #             cY = int(M["m01"] / M["m00"])
+    #             line_found = True
+
+    #             # Draw the contour and centroid on the image for visualization (optional)
+    #             cv2.drawContours(
+    #                 image, [contour], -1, (0, 255, 0), 2
+    #             )  # Draw contour in green
+    #             cv2.circle(image, (cX, cY), 7, (255, 0, 0), -1)  # Draw centroid in blue
+    #             cv2.putText(
+    #                 image,
+    #                 f"Centroid: ({cX}, {cY})",
+    #                 (cX + 10, cY - 10),
+    #                 cv2.FONT_HERSHEY_SIMPLEX,
+    #                 0.5,
+    #                 (255, 0, 0),
+    #                 2,
+    #             )
+
+    #     # Step 6: Calculate the distance from the centroid to the center of the image
+    #     if line_found:
+    #         # Get the center of the image (for comparison)
+    #         image_center = image.shape[1] // 2
+
+    #         # Calculate the horizontal distance from the centroid to the center
+    #         distance = cX - image_center
+
+    #         # Control logic based on the distance
+    #         if distance < -50:
+    #             action = "Turn Left"
+    #         elif distance > 50:
+    #             action = "Turn Right"
+    #         else:
+    #             action = "Move Forward"
+    #     else:
+    #         # If no line detected
+    #         action = "No Line Detected"
+
+    #     # Return the distance and the action
+    #     return -np.abs(distance), action
+
+    def process_line_image(self, image):
+        """
+        Processes an input image to detect a yellow line, returns the distance from the line's centroid to the center of the image.
+        Displays the mask representing the yellow regions in the image.
+
+        Parameters:
+        - image: A NumPy array representing the image to process.
+
+        Returns:
+        - A tuple containing:
+            - distance (int): The horizontal distance from the line's centroid to the center of the image.
+            - action (str): The action to take based on the distance from the line ("Turn Left", "Turn Right", "Move Forward", "No Line Detected").
+        """
+        # Step 1: Convert the image to the HSV color space to isolate yellow
+        hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)  # Convert from RGB to HSV
+
+        # Step 2: Define the range of yellow color in HSV
+        # Adjust the Hue range for yellow; this can be tweaked depending on your lighting and image
+        lower_yellow = np.array(
+            [15, 150, 150]
+        )  # Adjusted lower bound for more saturation
+        upper_yellow = np.array(
+            [45, 255, 255]
+        )  # Adjusted upper bound for more saturation
+
+        # Step 3: Create a mask to extract only the yellow regions
+        mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+
+        # Show the mask to visualize the detected yellow areas
+        cv2.imshow("Yellow Mask", mask)
+        cv2.waitKey(1)  # Wait for a key press to close the window
+        # cv2.destroyAllWindows()  # Close the window after key press
+
+        # Step 4: Bitwise AND the mask with the original image to isolate yellow parts
+        yellow_image = cv2.bitwise_and(image, image, mask=mask)
+
+        # Show the isolated yellow region to check the mask result
+        cv2.imshow("Isolated Yellow Regions", yellow_image)
+        cv2.waitKey(1)
+        # cv2.destroyAllWindows()
+
+        # Step 5: Convert the masked yellow image to grayscale
+        gray = cv2.cvtColor(yellow_image, cv2.COLOR_RGB2GRAY)  # Convert to grayscale
+
+        # Step 6: Apply a binary threshold to highlight the yellow line
+        _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+
+        # Step 7: Find edges using Canny edge detector
+        edges = cv2.Canny(binary, 50, 150)
+
+        # Step 8: Find contours in the edges
+        contours, _ = cv2.findContours(
+            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+
+        # Step 9: Loop through the contours and find the centroid of the line
+        line_found = False
+        distance = 0
+        for contour in contours:
+            # Calculate moments of the contour
+            M = cv2.moments(contour)
+            if M["m00"] != 0:  # Avoid division by zero
+                # Calculate the centroid of the line
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+                line_found = True
+
+                # Draw the contour and centroid on the image for visualization (optional)
+                cv2.drawContours(
+                    image, [contour], -1, (0, 255, 0), 2
+                )  # Draw contour in green
+                cv2.circle(image, (cX, cY), 7, (255, 0, 0), -1)  # Draw centroid in blue
+                cv2.putText(
+                    image,
+                    f"Centroid: ({cX}, {cY})",
+                    (cX + 10, cY - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (255, 0, 0),
+                    2,
+                )
+
+        # Step 10: Calculate the distance from the centroid to the center of the image
+        if line_found:
+            # Get the center of the image (for comparison)
+            image_center = image.shape[1] // 2
+
+            # Calculate the horizontal distance from the centroid to the center
+            distance = cX - image_center
+
+            # Control logic based on the distance
+            if distance < -50:
+                action = "Turn Left"
+            elif distance > 50:
+                action = "Turn Right"
+            else:
+                action = "Move Forward"
+        else:
+            # If no line detected
+            action = "No Line Detected"
+            distance = 100
+
+        # Return the distance and the action
+        return -np.abs(distance), action
 
     def normalize_angle_rad(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
