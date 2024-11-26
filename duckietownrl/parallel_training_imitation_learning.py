@@ -46,7 +46,7 @@ wandb.init(
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)
 parser.add_argument("--env-name", default=None)
-parser.add_argument("--map-name", default="small_loop_bordered")
+parser.add_argument("--map-name", default="small_loop")
 parser.add_argument("--distortion", default=False, action="store_true")
 parser.add_argument(
     "--draw-curve", action="store_true", help="draw the lane following curve"
@@ -73,6 +73,7 @@ parser.add_argument("--n_envs", default=1, type=int)
 parser.add_argument("--tau", default=0.001, type=float)
 parser.add_argument("--reward_invalid_pose", default=-1000, type=int)
 parser.add_argument("--alpha", default=0.05, type=float)
+parser.add_argument("--collect_random_steps", default=3000, type=int)
 
 
 args = parser.parse_args()
@@ -213,7 +214,7 @@ def on_key_press(symbol, modifiers):
 
 
 once = True
-collect_random_timesteps = 1000
+collect_random_timesteps = args.collect_random_steps
 
 
 def update(dt):
