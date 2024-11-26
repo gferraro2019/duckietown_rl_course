@@ -133,6 +133,62 @@ class Wrapper(DuckietownEnv):
         return (img, *obs[1:])
 
 
+class Wrapper_YellowWhiteMask(Wrapper):
+    def __init__(self, env):
+        super().__init__(env)
+        self.observation_space = env.observation_space
+        n_imgs, img_height, img_width, n_chans = self.observation_space.shape
+        self.observation_space = spaces.Box(
+            0,
+            255,
+            (n_imgs, img_height, img_width, n_chans + 1),
+            dtype=self.observation_space.dtype,
+        )
+
+    def apply_transformation(self, img):
+        mask = self.create_white_yellow_mask(img)
+
+        b, g, r = cv2.split(img)
+
+        # Create the new image by adding the additional channel
+        # This will create a 4-channel image (BGRA)
+        return cv2.merge([b, g, r, mask.astype("float64")])
+
+    def create_white_yellow_mask(self, image):
+        """
+        Creates a mask that retains only the white and yellow lines from the input image.
+
+        Parameters:
+        - image: A NumPy array representing the image to process.
+
+        Returns:
+        - mask: A binary mask where white and yellow regions are retained.
+        """
+        # Step 1: Convert the image to the HSV color space
+        hsv = cv2.cvtColor(
+            (image * 255).astype("uint8"), cv2.COLOR_RGB2HSV
+        )  # Convert from RGB to HSV
+
+        # Step 2: Define the range for yellow color in HSV
+        lower_yellow = np.array([15, 150, 150])  # Lower bound for yellow
+        upper_yellow = np.array([45, 255, 255])  # Upper bound for yellow
+        mask_yellow = cv2.inRange(hsv, lower_yellow, upper_yellow)
+
+        # Step 3: Define the range for white color in HSV
+        lower_white = np.array([0, 0, 200])  # Lower bound for white
+        upper_white = np.array([180, 25, 255])  # Upper bound for white
+        mask_white = cv2.inRange(hsv, lower_white, upper_white)
+
+        # Step 4: Combine the two masks (yellow and white)
+        mask_combined = cv2.bitwise_or(mask_yellow, mask_white)
+
+        # Optional: Visualize the combined mask
+        cv2.imshow("White and Yellow Mask", mask_combined)
+        cv2.waitKey(1)  # Wait for a key press to close the window
+
+        return mask_combined
+
+
 class Wrapper_BW(Wrapper):
     def __init__(self, env):
         super().__init__(env)

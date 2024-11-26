@@ -19,6 +19,7 @@ from duckietownrl.utils.wrappers import (
     Wrapper_NormalizeImage,
     Wrapper_Resize,
     Wrapper_StackObservation,
+    Wrapper_YellowWhiteMask,
 )
 
 from duckietownrl.algorithms.sac_new_2dconv import SAC
@@ -41,7 +42,7 @@ wandb.init(
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)
 parser.add_argument("--env-name", default=None)
-parser.add_argument("--map-name", default="small_loop_bordered")
+parser.add_argument("--map-name", default="small_loop")
 parser.add_argument("--distortion", default=False, action="store_true")
 parser.add_argument(
     "--draw-curve", action="store_true", help="draw the lane following curve"
@@ -62,7 +63,7 @@ parser.add_argument("--height_frame", default=28, type=int)
 parser.add_argument("--width_preview", default=80, type=int)
 parser.add_argument("--height_preview", default=60, type=int)
 
-parser.add_argument("--n_chans", default=1, type=int)
+parser.add_argument("--n_chans", default=3, type=int)
 parser.add_argument("--n_frames", default=3, type=int)
 parser.add_argument("--n_envs", default=1, type=int)
 parser.add_argument("--tau", default=0.005, type=float)
@@ -72,7 +73,7 @@ parser.add_argument("--alpha", default=0.20, type=float)
 
 args = parser.parse_args()
 
-
+yellow_mask = True
 n_frames = args.n_frames
 n_chans = args.n_chans  # 1 for B/W images 3 for RGBs
 n_envs = args.n_envs
@@ -99,6 +100,9 @@ for i in range(n_envs):
     if n_chans == 1:
         env.append_wrapper(Wrapper_BW(env))
     env.append_wrapper(Wrapper_NormalizeImage(env))
+    if yellow_mask:
+        env.append_wrapper(Wrapper_YellowWhiteMask(env))
+        n_chans += 1
 
     env.reset()
     env.render(mode="rgb_array")
