@@ -102,6 +102,9 @@ class Wrapper(DuckietownEnv):
             "camera_width",
             "camera_height",
             "reward_invalid_pose",
+            "user_tile_start",
+            "start_pose",
+            "start_angle",
         ]
         env_to_dict = vars(env)
         kwargs = {k: env_to_dict[k] for k in keys_to_keep if k in env_to_dict}

@@ -233,6 +233,8 @@ class Simulator(gym.Env):
         accept_start_angle_deg=DEFAULT_ACCEPT_START_ANGLE_DEG,
         full_transparency: bool = False,
         user_tile_start=None,
+        start_pose=None,
+        start_angle=None,
         seed: int = None,
         distortion: bool = False,
         dynamics_rand: bool = False,
@@ -401,6 +403,8 @@ class Simulator(gym.Env):
 
         # Start tile
         self.user_tile_start = user_tile_start
+        self.start_pose = start_pose
+        self.start_angle = start_angle
 
         self.style = style
 
@@ -740,10 +744,10 @@ class Simulator(gym.Env):
             logger.info(f"using map pose start: {self.start_pose}")
 
             i, j = tile["coords"]
-            x = i * self.road_tile_size + self.start_pose[0][0]
-            z = j * self.road_tile_size + self.start_pose[0][2]
+            x = i * self.road_tile_size + self.start_pose[0]
+            z = j * self.road_tile_size + self.start_pose[2]
             propose_pos = np.array([x, 0, z])
-            propose_angle = self.start_pose[1]
+            propose_angle = self.start_angle
 
             logger.info(
                 f"Using map pose start. \n Pose: {propose_pos}, Angle: {propose_angle}"
@@ -1824,11 +1828,11 @@ class Simulator(gym.Env):
             # self.x = x
             # self.y = y
 
-            reward = (np.abs(lp.dist) ** 2) * (1 - np.abs(lp.dot_dir))
+            # reward = (np.abs(lp.dist) ** 2) * (1 - np.abs(lp.dot_dir))
 
-            # original reward
-            if speed < 0.2 or speed > 0.4:
-                reward += 100 * (np.abs(speed) * -1 - 0.2)
+            # # original reward
+            # if speed < 0.2 or speed > 0.4:
+            #     reward += 100 * (np.abs(speed) * -1 - 0.2)
 
             # self.buffer_directions.append(lp.dot_dir)
             # self.buffer_directions.pop(0)
@@ -1846,9 +1850,18 @@ class Simulator(gym.Env):
             # else:
             #     reward += speed + lp.dist * 100
 
+        # distance, action = self.process_line_image(self.img_array)
+        # print(distance, action)
+        # reward = distance
         distance, action = self.process_line_image(self.img_array)
         print(distance, action)
-        reward = distance
+        if distance > -100:
+            reward = distance
+        else:
+            # if there is no yellow line, we reward if turns left otherwhise we penalize the agent
+            reward = self.action[1] - self.action[0]
+        if speed < 0:
+            reward += -100
         # distance_white, distance_yellow = self.process_line_image(self.img_array)
 
         # if distance_yellow is not False:
@@ -2001,6 +2014,8 @@ class Simulator(gym.Env):
         action = np.array(action)
         for _ in range(self.frame_skip):
             self.update_physics(action)
+
+        self.action = action
 
         # Generate the current camera image
         obs = self.render_obs()
