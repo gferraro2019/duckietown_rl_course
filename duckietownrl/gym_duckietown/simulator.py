@@ -1855,6 +1855,7 @@ class Simulator(gym.Env):
         # reward = distance
         distance, action = self.process_line_image(self.img_array)
         print(distance, action)
+
         if distance > -100:
             reward = distance
         else:
@@ -1862,6 +1863,7 @@ class Simulator(gym.Env):
             reward = -100 + (self.action[1] - self.action[0])
         if speed < 0:
             reward += -100
+
         # distance_white, distance_yellow = self.process_line_image(self.img_array)
 
         # if distance_yellow is not False:
