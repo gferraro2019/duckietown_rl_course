@@ -182,14 +182,25 @@ class Wrapper_YellowWhiteMask(Wrapper):
         upper_white = np.array([180, 25, 255])  # Upper bound for white
         mask_white = cv2.inRange(hsv, lower_white, upper_white)
 
-        # Step 4: Combine the two masks (yellow and white)
-        mask_combined = cv2.bitwise_or(mask_yellow, mask_white)
+        # # Step 4: Combine the two masks (yellow and white)
+        # mask_combined = cv2.bitwise_or(mask_yellow, mask_white)
 
-        # Optional: Visualize the combined mask
-        cv2.imshow("White and Yellow Mask", mask_combined)
+        # # Optional: Visualize the combined mask
+        # cv2.imshow("White and Yellow Mask", mask_combined)
+        # cv2.waitKey(1)  # Wait for a key press to close the window
+
+        # Create a new black RGB image
+        black_rgb_image = np.zeros((image.shape[0], image.shape[1], 3), dtype=np.uint8)
+
+        # Color the yellow and white regions on the black image
+        black_rgb_image[mask_yellow == 255] = [0, 255, 255]  # Yellow color
+        black_rgb_image[mask_white == 255] = [255, 255, 255]  # White color
+
+        # Show the new image with yellow and white lines overlaid in color
+        cv2.imshow("Yellow and White Mask with Centroids", black_rgb_image)
         cv2.waitKey(1)  # Wait for a key press to close the window
 
-        return mask_combined
+        return black_rgb_image
 
 
 class Wrapper_BW(Wrapper):

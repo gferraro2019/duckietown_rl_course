@@ -107,7 +107,6 @@ for i in range(n_envs):
     env.append_wrapper(Wrapper_NormalizeImage(env))
     if yellow_mask:
         env.append_wrapper(Wrapper_YellowWhiteMask(env))
-        n_chans += 1
 
     env.reset()
     env.render(mode="rgb_array")

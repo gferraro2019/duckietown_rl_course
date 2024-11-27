@@ -78,7 +78,7 @@ parser.add_argument("--collect_random_steps", default=3000, type=int)
 
 args = parser.parse_args()
 
-
+yellow_mask = True
 n_frames = args.n_frames
 n_chans = args.n_chans
 n_envs = args.n_envs
@@ -109,6 +109,8 @@ for i in range(n_envs):
     if n_chans == 1:
         env.append_wrapper(Wrapper_BW(env))
     env.append_wrapper(Wrapper_NormalizeImage(env))
+    if yellow_mask:
+        env.append_wrapper(Wrapper_YellowWhiteMask(env))
 
     env.reset()
     env.render(mode="rgb_array")
