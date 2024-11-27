@@ -69,6 +69,8 @@ parser.add_argument("--n_envs", default=1, type=int)
 parser.add_argument("--tau", default=0.005, type=float)
 parser.add_argument("--reward_invalid_pose", default=-100, type=int)
 parser.add_argument("--alpha", default=0.20, type=float)
+parser.add_argument("--collect_random_steps", default=3000, type=int)
+parser.add_argument("--path", default="/media/g.ferraro/DONNEES", type=str)
 
 
 args = parser.parse_args()
@@ -152,11 +154,11 @@ save_on_episodes = args.save_on_episode
 running_avg_reward = 0
 
 folder_name = os.path.join("models", f"{datetime.now().strftime('%Y%m%d_%H%M%S')}")
-path = "/media/g.ferraro/DONNEES"
+path = args.path
 
 eps_returns = np.zeros(n_envs)
 once = True
-collect_random_timesteps = 1000
+collect_random_timesteps = args.collect_random_steps
 
 
 def update(dt):
@@ -176,7 +178,8 @@ def update(dt):
     dones = []
 
     if timesteps < collect_random_timesteps:
-        action = 2 * torch.rand(1, 2) - 1
+        action = 2 * np.random.rand(1, 2) - 1
+
     else:
         action = agent.select_action(torch.tensor(obs, dtype=torch.float32).to(device))
 
