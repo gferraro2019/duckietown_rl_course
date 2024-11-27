@@ -137,9 +137,10 @@ class Wrapper(DuckietownEnv):
 
 
 class Wrapper_YellowWhiteMask(Wrapper):
-    def __init__(self, env):
+    def __init__(self, env, return_mask=False):
         super().__init__(env)
         self.observation_space = env.observation_space
+        self.return_mask=return_mask
         n_imgs, img_height, img_width, n_chans = self.observation_space.shape
         self.observation_space = spaces.Box(
             0,
@@ -155,7 +156,11 @@ class Wrapper_YellowWhiteMask(Wrapper):
 
         # Create the new image by adding the additional channel
         # This will create a 4-channel image (BGRA)
-        return cv2.merge([b, g, r, mask.astype("float64")])
+        if self.return_mask:
+            return  mask.astype("float64")
+        else: 
+            return  cv2.merge([b, g, r, mask.astype("float64")])
+            
 
     def create_white_yellow_mask(self, image):
         """
