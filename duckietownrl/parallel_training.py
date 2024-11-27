@@ -105,9 +105,16 @@ for i in range(n_envs):
     if n_chans == 1:
         env.append_wrapper(Wrapper_BW(env))
     env.append_wrapper(Wrapper_NormalizeImage(env))
+
     if yellow_mask:
-        env.append_wrapper(Wrapper_YellowWhiteMask(env))
-        n_chans += 1
+        return_mask=True
+        env.append_wrapper(Wrapper_YellowWhiteMask(env,return_mask))
+        if return_mask:
+            n_chans = 1 # to transorm obs in the  mask
+            env.n_chans=1
+        else:
+            n_chans += 1 # to add the mask
+
 
     env.reset()
     env.render(mode="rgb_array")
