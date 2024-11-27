@@ -1859,7 +1859,7 @@ class Simulator(gym.Env):
             reward = distance
         else:
             # if there is no yellow line, we reward if turns left otherwhise we penalize the agent
-            reward = self.action[1] - self.action[0]
+            reward = -100 + (self.action[1] - self.action[0])
         if speed < 0:
             reward += -100
         # distance_white, distance_yellow = self.process_line_image(self.img_array)
