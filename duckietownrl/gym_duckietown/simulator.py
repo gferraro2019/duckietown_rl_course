@@ -1793,9 +1793,9 @@ class Simulator(gym.Env):
     def compute_reward(self, pos, angle, speed):
         # Compute the collision avoidance penalty
         col_penalty = self.proximity_penalty2(pos, angle)
-        reward = self.reward_invalid_pose / 2
 
-        # Get the position relative to the right lane tangent
+        reward = self.reward_invalid_pose/2
+   # Get the position relative to the right lane tangent
         try:
             lp = self.get_lane_pos2(pos, angle)
             self.lp = lp
@@ -1804,7 +1804,9 @@ class Simulator(gym.Env):
         else:
             timestep_cost = 0
 
-        distance_yellow, distance_white, action = self.process_image(self.img_array)
+
+        distance_yellow, distance_white,action = self.process_image(self.img_array)
+
         print(action)
         if distance_yellow != -np.inf:
             reward = -distance_yellow
@@ -1874,16 +1876,13 @@ class Simulator(gym.Env):
         mask_white = cv2.inRange(hsv, lower_white, upper_white)
 
         # Step 3: Find contours in the yellow mask
-        contours_yellow, _ = cv2.findContours(
-            mask_yellow, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
 
+        contours_yellow, _ = cv2.findContours(mask_yellow, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
         # Step 4: Find contours in the white mask
-        contours_white, _ = cv2.findContours(
-            mask_white, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours_white, _ = cv2.findContours(mask_white, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # Find the centroid of the yellow region
+     # Find the centroid of the yellow region
         centroid_x_yellow, centroid_y_yellow = None, None
         for contour in contours_yellow:
             M = cv2.moments(contour)
@@ -1910,31 +1909,21 @@ class Simulator(gym.Env):
         distance_white = -np.inf
 
         if centroid_x_yellow is not None and centroid_y_yellow is not None:
-            distance_yellow = np.sqrt(
-                (centroid_x_yellow - ref_x) ** 2 + (centroid_y_yellow - ref_y) ** 2
-            )
+
+            distance_yellow = np.sqrt((centroid_x_yellow - ref_x) ** 2 + (centroid_y_yellow - ref_y) ** 2)
 
         if centroid_x_white is not None and centroid_y_white is not None:
-            distance_white = np.sqrt(
-                (centroid_x_white - ref_x) ** 2 + (centroid_y_white - ref_y) ** 2
-            )
+            distance_white = np.sqrt((centroid_x_white - ref_x) ** 2 + (centroid_y_white - ref_y) ** 2)
 
         # Step 7: Create a new black image for the result
         result_image = np.zeros((height, width, 3), dtype=np.uint8)
 
         # Draw the centroid (green for yellow, red for white) and reference point (blue)
         if centroid_x_yellow is not None and centroid_y_yellow is not None:
-            cv2.circle(
-                result_image, (centroid_x_yellow, centroid_y_yellow), 5, (0, 255, 0), -1
-            )  # Green dot for yellow
+
+            cv2.circle(result_image, (centroid_x_yellow, centroid_y_yellow), 5, (0, 255, 0), -1)  # Green dot for yellow
         if centroid_x_white is not None and centroid_y_white is not None:
-            cv2.circle(
-                result_image,
-                (centroid_x_white, centroid_y_white),
-                5,
-                (255, 255, 255),
-                -1,
-            )  # White dot for white
+            cv2.circle(result_image, (centroid_x_white, centroid_y_white), 5, (255, 255, 255), -1)  # White dot for white
 
         # Draw reference point in blue
         cv2.circle(result_image, (ref_x, ref_y), 5, (255, 0, 0), -1)
@@ -1943,17 +1932,19 @@ class Simulator(gym.Env):
         cv2.imshow("Processed Image", result_image)
         cv2.waitKey(1)
 
-        # Step 9: Determine the action based on the white centroid's position
+  # Step 9: Determine the action based on the white centroid's position
         action = None
         if centroid_x_white is not None and centroid_y_white is not None:
             # Check if white centroid is in the left or right area
-            if centroid_x_white < width / 2:  # In the left area
+            if centroid_x_white < width/2:  # In the left area
+
                 action = "Go Right"
             else:  # In the right area
                 action = "Go Left"
 
         # Return the result image and distances (for both yellow and white lines)
-        return distance_yellow, distance_white, action
+
+        return distance_yellow, distance_white,action
 
     def boost_contrast_and_saturation(
         self, image, contrast_factor=1.7, saturation_factor=1.7
