@@ -95,9 +95,9 @@ for i in range(n_envs):
         camera_width=resize_shape[0],
         camera_height=resize_shape[1],
         reward_invalid_pose=args.reward_invalid_pose,
-        user_tile_start=(2, 0),
-        start_pose=(0.34220727, 0, 0.58371305),
-        start_angle=np.pi / 2,
+        # user_tile_start=(2, 0),
+        # start_pose=(0.34220727, 0, 0.58371305),
+        # start_angle=np.pi / 2,
     )
     k += 1
     # wrapping the environment
