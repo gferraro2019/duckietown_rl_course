@@ -1853,15 +1853,37 @@ class Simulator(gym.Env):
         # distance, action = self.process_line_image(self.img_array)
         # print(distance, action)
         # reward = distance
-        distance, action = self.process_line_image(self.img_array)
-        print(distance, action)
-        if distance > -100:
-            reward = distance
+        # (
+        #     distance_yellow,
+        #     action_according_yellow,
+        #     distance_white,
+        #     action_according_white,
+        # ) = self.process_line_image(self.img_array)
+        # print("Yellow:", distance_yellow, action_according_yellow)
+        # print("White:", distance_white, action_according_white)
+
+        # if distance_yellow > -100:
+        #     reward = distance_yellow
+        # else:
+        #     # if there is no yellow line, we reward if turns left otherwhise we penalize the agent
+        #     reward = -100 + (self.action[1] - self.action[0])
+        # if speed < 0:
+        #     reward += -100
+
+        distance = self.process_image(self.img_array)
+        if distance != -np.inf:
+            reward = -distance
         else:
-            # if there is no yellow line, we reward if turns left otherwhise we penalize the agent
-            reward = -100 + (self.action[1] - self.action[0])
-        if speed < 0:
-            reward += -100
+            if speed < 0:
+                reward = abs(speed)
+            else:
+                if self.action[1] >= self.action[0]:
+                    diff = abs(self.action[1] - self.action[0])
+                    reward = diff
+                else:
+                    diff = abs(self.action[0] - self.action[1])
+                    reward = -diff
+
         # distance_white, distance_yellow = self.process_line_image(self.img_array)
 
         # if distance_yellow is not False:
@@ -1887,7 +1909,121 @@ class Simulator(gym.Env):
         #             reward -= 100 - self.last_distance_white
         # else:
         #     reward = -100
+        print(self.action)
         return reward  # + sum(self.buffer_directions) - 10
+
+    def process_image(self, image):
+        """
+        Process the input image by masking the top two-thirds, detecting yellow line,
+        finding the centroid, and calculating the distance from a reference point.
+
+        Parameters:
+        - image: The input image (RGB format).
+
+        Returns:
+        - The image with the centroid and reference point marked, and the distance from the reference point to the centroid.
+        If no yellow line is detected, returns "no detection".
+        """
+        image = self.boost_contrast_and_saturation(image)
+
+        # Step 1: Mask the top two-thirds of the image (make them black)
+        height, width, _ = image.shape
+        mask_height = height // 3  # Top third of the image is blacked out
+        image[mask_height:, :] = 0  # Set the top third to black (0)
+        cv2.imshow("Clipped Image", image)
+        cv2.waitKey(1)
+
+        # Step 2: Convert the image to HSV color space to detect yellow color
+        hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+
+        # Define the range for yellow color in HSV
+        lower_yellow = np.array([15, 150, 150])  # Lower bound for yellow
+        upper_yellow = np.array([45, 255, 255])  # Upper bound for yellow
+
+        # Create a mask for the yellow regions
+        mask_yellow = cv2.inRange(hsv, lower_yellow, upper_yellow)
+
+        # Step 3: Find contours in the yellow mask
+        contours, _ = cv2.findContours(
+            mask_yellow, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+
+        # Step 4: Find the centroid of the yellow region
+        centroid_x, centroid_y = None, None
+        for contour in contours:
+            M = cv2.moments(contour)
+            if M["m00"] != 0:  # Check if the contour is non-empty
+                centroid_x = int(M["m10"] / M["m00"])
+                centroid_y = int(M["m01"] / M["m00"])
+
+                # Break after first yellow contour is found
+                break  # Take the first detected yellow contour
+
+        # Step 5: Define the reference point (x=center of image, y=90% of image height)
+        ref_x = width // 2
+        ref_y = int(height * 0.1)  # 90% of the image height (near the bottom)
+
+        # Step 6: Calculate the distance from the reference point to the yellow centroid
+        if centroid_x is not None and centroid_y is not None:
+            distance = np.sqrt((centroid_x - ref_x) ** 2 + (centroid_y - ref_y) ** 2)
+        else:
+            # No yellow line detected
+            distance = -np.inf
+
+        # Step 7: Create a new black image
+        result_image = np.zeros((height, width, 3), dtype=np.uint8)
+
+        # Draw the centroid (green) and reference point (blue) on the new image
+        if centroid_x is not None and centroid_y is not None:
+            cv2.circle(
+                result_image, (centroid_x, centroid_y), 2, (0, 255, 0), -1
+            )  # Green dot for centroid
+        cv2.circle(
+            result_image, (ref_x, ref_y), 2, (255, 0, 0), -1
+        )  # Blue dot for reference point
+
+        cv2.imshow("Processed Image", result_image)
+        cv2.waitKey(1)
+
+        # Return the result image and distance
+        return distance
+
+    def boost_contrast_and_saturation(
+        self, image, contrast_factor=1.7, saturation_factor=1.7
+    ):
+        """
+        Boosts the contrast and saturation of an RGB image.
+
+        Parameters:
+        - image: The input RGB image (as a NumPy array).
+        - contrast_factor: The factor by which to enhance contrast (default 1.5).
+        - saturation_factor: The factor by which to increase saturation (default 1.5).
+
+        Returns:
+        - The enhanced image with increased contrast and saturation.
+        """
+
+        # Step 1: Boost contrast
+        # Convert the image to float32 for better precision
+        contrast_image = image.astype(np.float32)
+
+        # Apply contrast enhancement (scale pixel values by contrast_factor)
+        contrast_image = np.clip(contrast_image * contrast_factor, 0, 255)
+
+        # Convert back to uint8
+        contrast_image = contrast_image.astype(np.uint8)
+
+        # Step 2: Boost saturation
+        # Convert the image to HSV color space
+        hsv = cv2.cvtColor(contrast_image, cv2.COLOR_RGB2HSV)
+
+        # Increase the saturation (S channel)
+        hsv[..., 1] = np.clip(hsv[..., 1] * saturation_factor, 0, 255)
+
+        # Convert back to RGB color space
+        enhanced_image = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+
+        return enhanced_image
 
     def process_line_image(self, image):
         """
@@ -1902,6 +2038,8 @@ class Simulator(gym.Env):
             - distance (int): The horizontal distance from the yellow line's centroid to the center of the image.
             - action (str): The action to take based on the distance from the yellow line ("Turn Left", "Turn Right", "Move Forward", "No Line Detected").
         """
+        image = self.boost_contrast_and_saturation(image)
+
         # Step 1: Convert the image to the HSV color space
         hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)  # Convert from RGB to HSV
 
@@ -1978,28 +2116,53 @@ class Simulator(gym.Env):
         cv2.waitKey(1)  # Wait for a key press to close the window
 
         # Step 5: Calculate the distance from the yellow centroid to the center of the image
-        distance = 0
+        distance_yellow = 0
         if yellow_found:
             # Get the center of the image (for comparison)
             image_center = image.shape[1] // 2
 
-            # Calculate the horizontal distance from the centroid to the center
-            distance = cX_yellow - image_center
+            # Calculate the horizontal distance_yellow from the centroid to the center
+            distance_yellow = cX_yellow - image_center
 
-            # Control logic based on the distance
-            if distance < -50:
-                action = "Turn Left"
-            elif distance > 50:
-                action = "Turn Right"
+            # Control logic based on the distance_yellow
+            if distance_yellow < -50:
+                action_according_yellow = "Turn Left"
+            elif distance_yellow > 50:
+                action_according_yellow = "Turn Right"
             else:
-                action = "Move Forward"
+                action_according_yellow = "Move Forward"
         else:
             # If no yellow line detected
-            action = "No Line Detected"
-            distance = 100
+            action_according_yellow = "No Line Detected"
+            distance_yellow = 100
 
-        # Return the distance and the action
-        return -np.abs(distance), action
+        distance_white = 0
+        if white_found:
+            # Get the center of the image (for comparison)
+            image_center = image.shape[1] // 2
+
+            # Calculate the horizontal distance_white from the centroid to the center
+            distance_white = cX_white - image_center
+
+            # Control logic based on the distance_white
+            if distance_white < -50:
+                action_according_white = "Turn Left"
+            elif distance_white > 50:
+                action_according_white = "Turn Right"
+            else:
+                action_according_white = "Move Forward"
+        else:
+            # If no white line detected
+            action_according_white = "No Line Detected"
+            distance_white = 100
+
+        # Return the distance_yellow and the action
+        return (
+            -np.abs(distance_yellow),
+            action_according_yellow,
+            -np.abs(distance_white),
+            action_according_white,
+        )
 
     def normalize_angle_rad(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
