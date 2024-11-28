@@ -140,7 +140,7 @@ class Wrapper_YellowWhiteMask(Wrapper):
     def __init__(self, env, return_mask=False):
         super().__init__(env)
         self.observation_space = env.observation_space
-        self.return_mask=return_mask
+        self.return_mask = return_mask
         n_imgs, img_height, img_width, n_chans = self.observation_space.shape
         self.observation_space = spaces.Box(
             0,
@@ -157,10 +157,9 @@ class Wrapper_YellowWhiteMask(Wrapper):
         # Create the new image by adding the additional channel
         # This will create a 4-channel image (BGRA)
         if self.return_mask:
-            return  mask.astype("float64")
-        else: 
-            return  cv2.merge([b, g, r, mask.astype("float64")])
-            
+            return mask.astype("float64")
+        else:
+            return cv2.merge([b, g, r, mask.astype("float64")])
 
     def create_white_yellow_mask(self, image):
         """
@@ -202,7 +201,7 @@ class Wrapper_YellowWhiteMask(Wrapper):
         black_rgb_image[mask_white == 255] = [255, 255, 255]  # White color
 
         # Show the new image with yellow and white lines overlaid in color
-        cv2.imshow("Yellow and White Mask with Centroids", black_rgb_image)
+        cv2.imshow("Yellow and White Mask with Centroids", black_rgb_image / 255.0)
         cv2.waitKey(1)  # Wait for a key press to close the window
 
         return black_rgb_image
