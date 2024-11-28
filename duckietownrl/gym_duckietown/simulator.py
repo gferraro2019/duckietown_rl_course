@@ -271,6 +271,7 @@ class Simulator(gym.Env):
         :param enable_leds: Enables LEDs drawing.
         """
         self.reward_invalid_pose = reward_invalid_pose
+        self.worse_distance = np.inf
 
         self.last_dot_dir = -1
         self.max_speed = -1.2
@@ -1792,7 +1793,7 @@ class Simulator(gym.Env):
     def compute_reward(self, pos, angle, speed):
         # Compute the collision avoidance penalty
         col_penalty = self.proximity_penalty2(pos, angle)
-        reward = -1
+        reward = self.reward_invalid_pose / 2
 
         # Get the position relative to the right lane tangent
         try:
@@ -1802,127 +1803,51 @@ class Simulator(gym.Env):
             reward = 40 * col_penalty
         else:
             timestep_cost = 0
-            # Compute the reward
 
-            # hard coded reward function
-            # x, z, y = pos
-            # border_start = 2.22
-            # border_finish = 0.71
-            # delta = 0.10
-            # if speed <= 0:
-            #     reward = -1
-            # else:
-            #     if y >= border_start - delta and y <= border_start:
-            #         if x > self.x:
-            #             reward = speed * 10
-            #     elif y >= border_finish and y <= border_finish + delta:
-            #         if x < self.x:
-            #             reward = speed * 10
-            #     elif x >= border_start - delta and x <= border_start:
-            #         if y < self.y:
-            #             reward = speed * 10
-            #     elif x >= border_finish and x <= border_finish + delta:
-            #         if y > self.y:
-            #             reward = speed * 10
-
-            # self.x = x
-            # self.y = y
-
-            # reward = (np.abs(lp.dist) ** 2) * (1 - np.abs(lp.dot_dir))
-
-            # # original reward
-            # if speed < 0.2 or speed > 0.4:
-            #     reward += 100 * (np.abs(speed) * -1 - 0.2)
-
-            # self.buffer_directions.append(lp.dot_dir)
-            # self.buffer_directions.pop(0)
-
-            # reward = self.last_dot_dir - lp.dot_dir
-            # self.last_dot_dir = lp.dot_dir
-
-            # print(lp.dist)
-            # if speed >= 0:
-            #     if lp.dist <= 0.06:
-            #         reward += speed * lp.dist * 100
-            #     else:
-            #         reward += speed + lp.dist * 100 * -1
-
-            # else:
-            #     reward += speed + lp.dist * 100
-
-        # distance, action = self.process_line_image(self.img_array)
-        # print(distance, action)
-        # reward = distance
-        # (
-        #     distance_yellow,
-        #     action_according_yellow,
-        #     distance_white,
-        #     action_according_white,
-        # ) = self.process_line_image(self.img_array)
-        # print("Yellow:", distance_yellow, action_according_yellow)
-        # print("White:", distance_white, action_according_white)
-
-        # if distance_yellow > -100:
-        #     reward = distance_yellow
-        # else:
-        #     # if there is no yellow line, we reward if turns left otherwhise we penalize the agent
-        #     reward = -100 + (self.action[1] - self.action[0])
-        # if speed < 0:
-        #     reward += -100
-
-        distance = self.process_image(self.img_array)
-        if distance != -np.inf:
-            reward = -distance
+        distance_yellow, distance_white, action = self.process_image(self.img_array)
+        print(action)
+        if distance_yellow != -np.inf:
+            reward = -distance_yellow
+            if self.worse_distance > distance_yellow:
+                self.worse_distance = -distance_yellow
         else:
-            if speed < 0:
-                reward = abs(speed)
+            if distance_white != -np.inf:
+                if action == "Go Right":
+                    if (
+                        self.action[1] < self.action[0]
+                    ):  # actually going right, thus reward
+                        diff = abs(self.action[1] - self.action[0])
+                        reward = self.worse_distance + diff
+                    else:
+                        diff = abs(
+                            self.action[0] - self.action[1]
+                        )  # actually NOT going right, thus penalize
+                        reward = self.worse_distance - diff
+                elif action == "Go Left":
+                    if self.action[1] > self.action[0]:
+                        diff = abs(self.action[0] - self.action[1])
+                        reward = self.worse_distance + diff
+                    else:
+                        diff = abs(self.action[1] - self.action[0])
+                        reward = self.worse_distance - diff
+
             else:
-                if self.action[1] >= self.action[0]:
-                    diff = abs(self.action[1] - self.action[0])
-                    reward = diff
-                else:
-                    diff = abs(self.action[0] - self.action[1])
-                    reward = -diff
+                reward = self.worse_distance
 
-        # distance_white, distance_yellow = self.process_line_image(self.img_array)
-
-        # if distance_yellow is not False:
-        #     self.last_distance_yellow = np.abs(distance_yellow)
-
-        # # distance_yellow = self.last_distance_yellow
-
-        # if distance_white is not False:
-        #     self.last_distance_white = np.abs(distance_white)
-
-        # # distance_white = self.last_distance_white
-
-        # print(distance_yellow, distance_white)
-
-        # if speed >= 0:
-        #     if distance_yellow is not False:
-        #         reward = -np.abs(distance_yellow)
-        #     else:
-        #         reward = -self.last_distance_yellow
-        #         if distance_white is not False:
-        #             reward -= 100 - np.abs(distance_white)
-        #         else:
-        #             reward -= 100 - self.last_distance_white
-        # else:
-        #     reward = -100
         print(self.action)
         return reward  # + sum(self.buffer_directions) - 10
 
     def process_image(self, image):
         """
-        Process the input image by masking the top two-thirds, detecting yellow line,
-        finding the centroid, and calculating the distance from a reference point.
+        Process the input image by masking the top two-thirds, detecting yellow and white lines,
+        finding the centroids of both lines, and calculating the distance from a reference point.
 
         Parameters:
         - image: The input image (RGB format).
 
         Returns:
-        - The image with the centroid and reference point marked, and the distance from the reference point to the centroid.
-        If no yellow line is detected, returns "no detection".
+        - The image with the centroids of yellow and white lines and the reference point marked, and the distance from the reference point to the centroids.
+        If no yellow or white line is detected, returns -np.inf.
         """
         image = self.boost_contrast_and_saturation(image)
 
@@ -1933,60 +1858,102 @@ class Simulator(gym.Env):
         cv2.imshow("Clipped Image", image)
         cv2.waitKey(1)
 
-        # Step 2: Convert the image to HSV color space to detect yellow color
+        # Step 2: Convert the image to HSV color space
         hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
 
         # Define the range for yellow color in HSV
         lower_yellow = np.array([15, 150, 150])  # Lower bound for yellow
         upper_yellow = np.array([45, 255, 255])  # Upper bound for yellow
 
-        # Create a mask for the yellow regions
+        # Define the range for white color in HSV
+        lower_white = np.array([0, 0, 200])  # Lower bound for white
+        upper_white = np.array([180, 25, 255])  # Upper bound for white
+
+        # Create masks for yellow and white regions
         mask_yellow = cv2.inRange(hsv, lower_yellow, upper_yellow)
+        mask_white = cv2.inRange(hsv, lower_white, upper_white)
 
         # Step 3: Find contours in the yellow mask
-        contours, _ = cv2.findContours(
+        contours_yellow, _ = cv2.findContours(
             mask_yellow, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
 
-        # Step 4: Find the centroid of the yellow region
-        centroid_x, centroid_y = None, None
-        for contour in contours:
+        # Step 4: Find contours in the white mask
+        contours_white, _ = cv2.findContours(
+            mask_white, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+
+        # Find the centroid of the yellow region
+        centroid_x_yellow, centroid_y_yellow = None, None
+        for contour in contours_yellow:
             M = cv2.moments(contour)
             if M["m00"] != 0:  # Check if the contour is non-empty
-                centroid_x = int(M["m10"] / M["m00"])
-                centroid_y = int(M["m01"] / M["m00"])
-
-                # Break after first yellow contour is found
+                centroid_x_yellow = int(M["m10"] / M["m00"])
+                centroid_y_yellow = int(M["m01"] / M["m00"])
                 break  # Take the first detected yellow contour
 
-        # Step 5: Define the reference point (x=center of image, y=90% of image height)
+        # Find the centroid of the white region
+        centroid_x_white, centroid_y_white = None, None
+        for contour in contours_white:
+            M = cv2.moments(contour)
+            if M["m00"] != 0:  # Check if the contour is non-empty
+                centroid_x_white = int(M["m10"] / M["m00"])
+                centroid_y_white = int(M["m01"] / M["m00"])
+                break  # Take the first detected white contour
+
+        # Step 5: Define the reference point (x=center of image, y=10% of image height)
         ref_x = width // 2
-        ref_y = int(height * 0.1)  # 90% of the image height (near the bottom)
+        ref_y = int(height * 0.1)  # 10% of the image height (near the top)
 
-        # Step 6: Calculate the distance from the reference point to the yellow centroid
-        if centroid_x is not None and centroid_y is not None:
-            distance = np.sqrt((centroid_x - ref_x) ** 2 + (centroid_y - ref_y) ** 2)
-        else:
-            # No yellow line detected
-            distance = -np.inf
+        # Step 6: Calculate the distance from the reference point to the centroids
+        distance_yellow = -np.inf
+        distance_white = -np.inf
 
-        # Step 7: Create a new black image
+        if centroid_x_yellow is not None and centroid_y_yellow is not None:
+            distance_yellow = np.sqrt(
+                (centroid_x_yellow - ref_x) ** 2 + (centroid_y_yellow - ref_y) ** 2
+            )
+
+        if centroid_x_white is not None and centroid_y_white is not None:
+            distance_white = np.sqrt(
+                (centroid_x_white - ref_x) ** 2 + (centroid_y_white - ref_y) ** 2
+            )
+
+        # Step 7: Create a new black image for the result
         result_image = np.zeros((height, width, 3), dtype=np.uint8)
 
-        # Draw the centroid (green) and reference point (blue) on the new image
-        if centroid_x is not None and centroid_y is not None:
+        # Draw the centroid (green for yellow, red for white) and reference point (blue)
+        if centroid_x_yellow is not None and centroid_y_yellow is not None:
             cv2.circle(
-                result_image, (centroid_x, centroid_y), 2, (0, 255, 0), -1
-            )  # Green dot for centroid
-        cv2.circle(
-            result_image, (ref_x, ref_y), 2, (255, 0, 0), -1
-        )  # Blue dot for reference point
+                result_image, (centroid_x_yellow, centroid_y_yellow), 5, (0, 255, 0), -1
+            )  # Green dot for yellow
+        if centroid_x_white is not None and centroid_y_white is not None:
+            cv2.circle(
+                result_image,
+                (centroid_x_white, centroid_y_white),
+                5,
+                (255, 255, 255),
+                -1,
+            )  # White dot for white
 
+        # Draw reference point in blue
+        cv2.circle(result_image, (ref_x, ref_y), 5, (255, 0, 0), -1)
+
+        # Show the processed image
         cv2.imshow("Processed Image", result_image)
         cv2.waitKey(1)
 
-        # Return the result image and distance
-        return distance
+        # Step 9: Determine the action based on the white centroid's position
+        action = None
+        if centroid_x_white is not None and centroid_y_white is not None:
+            # Check if white centroid is in the left or right area
+            if centroid_x_white < width / 2:  # In the left area
+                action = "Go Right"
+            else:  # In the right area
+                action = "Go Left"
+
+        # Return the result image and distances (for both yellow and white lines)
+        return distance_yellow, distance_white, action
 
     def boost_contrast_and_saturation(
         self, image, contrast_factor=1.7, saturation_factor=1.7
