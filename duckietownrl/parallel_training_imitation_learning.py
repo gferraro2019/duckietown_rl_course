@@ -24,6 +24,7 @@ from duckietownrl.utils.wrappers import (
     Wrapper_NormalizeImage,
     Wrapper_Resize,
     Wrapper_StackObservation,
+    Wrapper_YellowWhiteMask,
 )
 
 from duckietownrl.algorithms.sac_new_2dconv import SAC
@@ -110,7 +111,8 @@ for i in range(n_envs):
         env.append_wrapper(Wrapper_BW(env))
     env.append_wrapper(Wrapper_NormalizeImage(env))
     if yellow_mask:
-        env.append_wrapper(Wrapper_YellowWhiteMask(env))
+        return_mask = True
+        env.append_wrapper(Wrapper_YellowWhiteMask(env, return_mask))
 
     env.reset()
     env.render(mode="rgb_array")
