@@ -54,6 +54,9 @@ parser.add_argument(
 parser.add_argument(
     "--max_steps", default=1500, help="number of steps per episode", type=int
 )
+parser.add_argument(
+    "--return_masked_obs", action="store_true", help="to use yellow and white wrapper"
+)
 
 parser.add_argument("--batch_size", default=64, type=int)
 parser.add_argument("--replay_buffer_size", default=50_000, type=int)
@@ -107,7 +110,7 @@ for i in range(n_envs):
     env.append_wrapper(Wrapper_NormalizeImage(env))
 
     if yellow_mask:
-        return_mask = False
+        return_mask = args.return_masked_obs
         env.append_wrapper(Wrapper_YellowWhiteMask(env, return_mask))
         if return_mask is False:
             n_chans += 3
