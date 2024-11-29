@@ -56,7 +56,10 @@ parser.add_argument(
     "--domain-rand", action="store_true", help="enable domain randomization"
 )
 parser.add_argument(
-    "--return_masked_obs", action="store_true", help="to use yellow and white wrapper"
+    "--return_masked_obs",
+    default=True,
+    help="to use yellow and white wrapper",
+    type=bool,
 )
 
 parser.add_argument(

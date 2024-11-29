@@ -55,7 +55,10 @@ parser.add_argument(
     "--max_steps", default=1500, help="number of steps per episode", type=int
 )
 parser.add_argument(
-    "--return_masked_obs", action="store_true", help="to use yellow and white wrapper"
+    "--return_masked_obs",
+    default=True,
+    help="to use yellow and white wrapper",
+    type=bool,
 )
 
 parser.add_argument("--batch_size", default=64, type=int)
