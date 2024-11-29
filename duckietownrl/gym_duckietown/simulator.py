@@ -1812,8 +1812,10 @@ class Simulator(gym.Env):
         if speed > 0:
             if distance_yellow != -np.inf:
                 reward = -distance_yellow / 10
+                #update worse reward
                 if self.worse_distance > distance_yellow:
                     self.worse_distance = -distance_yellow
+                
                 if action_yellow == "Go Right":
                     if (
                         self.action[1] < self.action[0]
@@ -1825,6 +1827,7 @@ class Simulator(gym.Env):
                             self.action[0] - self.action[1]
                         )  # actually NOT going right, thus penalize
                         reward = -diff
+                        
                 elif action_yellow == "Go Left":
                     if self.action[1] > self.action[0]:
                         diff = abs(self.action[0] - self.action[1])
@@ -1832,6 +1835,8 @@ class Simulator(gym.Env):
                     else:
                         diff = abs(self.action[1] - self.action[0])
                         reward = -diff
+                else:#None
+                    reward = self.worse_distance
 
             else:
                 if distance_white != -np.inf:
@@ -1853,11 +1858,13 @@ class Simulator(gym.Env):
                         else:
                             diff = abs(self.action[1] - self.action[0])
                             reward = self.worse_distance - diff
+                    else:#None
+                        reward = self.worse_distance
 
                 else:
-                    reward = self.worse_distance
+                    reward = self.worse_distance*2
         else:
-            reward = self.worse_distance
+            reward = self.worse_distance*3
 
         print(self.action)
         return reward  # + sum(self.buffer_directions) - 10
