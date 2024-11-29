@@ -1840,19 +1840,19 @@ class Simulator(gym.Env):
                             self.action[1] < self.action[0]
                         ):  # actually going right, thus reward
                             diff = abs(self.action[1] - self.action[0])
-                            reward = self.worse_distance + diff
+                            reward = self.worse_distance + diff * 2
                         else:
                             diff = abs(
                                 self.action[0] - self.action[1]
                             )  # actually NOT going right, thus penalize
-                            reward = self.worse_distance - diff
+                            reward = self.worse_distance - diff * 2
                     elif action_white == "Go Left":
                         if self.action[1] > self.action[0]:
                             diff = abs(self.action[0] - self.action[1])
-                            reward = self.worse_distance + diff
+                            reward = self.worse_distance + diff * 2
                         else:
                             diff = abs(self.action[1] - self.action[0])
-                            reward = self.worse_distance - diff
+                            reward = self.worse_distance - diff * 2
 
                 else:
                     reward = self.worse_distance
