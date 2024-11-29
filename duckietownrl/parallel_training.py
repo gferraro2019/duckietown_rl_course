@@ -56,9 +56,9 @@ parser.add_argument(
 )
 parser.add_argument(
     "--return_masked_obs",
-    default=True,
+    action="store_true",
+    default=False,
     help="to use yellow and white wrapper",
-    type=bool,
 )
 
 parser.add_argument("--batch_size", default=64, type=int)
