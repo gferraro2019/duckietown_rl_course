@@ -111,8 +111,11 @@ for i in range(n_envs):
         env.append_wrapper(Wrapper_BW(env))
     env.append_wrapper(Wrapper_NormalizeImage(env))
     if yellow_mask:
-        return_mask = True
+        return_mask = False
         env.append_wrapper(Wrapper_YellowWhiteMask(env, return_mask))
+        if return_mask is False:
+            n_chans += 3
+            env.n_chans += 3
 
     env.reset()
     env.render(mode="rgb_array")
