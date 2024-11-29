@@ -52,7 +52,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--max-steps", action="store_true", default=1500, help="number of steps per episode"
+    "--max_steps", default=1500, help="number of steps per episode", type=int
 )
 
 parser.add_argument("--batch_size", default=64, type=int)
