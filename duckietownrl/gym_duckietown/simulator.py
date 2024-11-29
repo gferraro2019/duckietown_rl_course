@@ -271,7 +271,7 @@ class Simulator(gym.Env):
         :param enable_leds: Enables LEDs drawing.
         """
         self.reward_invalid_pose = reward_invalid_pose
-        self.worse_distance = np.inf
+        self.worse_distance = 100
 
         self.last_dot_dir = -1
         self.max_speed = -1.2
@@ -1793,8 +1793,8 @@ class Simulator(gym.Env):
     def compute_reward(self, pos, angle, speed):
         # Compute the collision avoidance penalty
         col_penalty = self.proximity_penalty2(pos, angle)
-        reward = self.reward_invalid_pose / 2
 
+        reward = self.reward_invalid_pose / 2
         # Get the position relative to the right lane tangent
         try:
             lp = self.get_lane_pos2(pos, angle)
@@ -1804,35 +1804,60 @@ class Simulator(gym.Env):
         else:
             timestep_cost = 0
 
-        distance_yellow, distance_white, action = self.process_image(self.img_array)
-        print(action)
-        if distance_yellow != -np.inf:
-            reward = -distance_yellow
-            if self.worse_distance > distance_yellow:
-                self.worse_distance = -distance_yellow
-        else:
-            if distance_white != -np.inf:
-                if action == "Go Right":
+        distance_yellow, distance_white, action_white, action_yellow = (
+            self.process_image(self.img_array)
+        )
+
+        print(action_white)
+        if speed > 0:
+            if distance_yellow != -np.inf:
+                reward = -distance_yellow / 10
+                if self.worse_distance > distance_yellow:
+                    self.worse_distance = -distance_yellow
+                if action_yellow == "Go Right":
                     if (
                         self.action[1] < self.action[0]
                     ):  # actually going right, thus reward
                         diff = abs(self.action[1] - self.action[0])
-                        reward = self.worse_distance + diff
+                        reward = +diff
                     else:
                         diff = abs(
                             self.action[0] - self.action[1]
                         )  # actually NOT going right, thus penalize
-                        reward = self.worse_distance - diff
-                elif action == "Go Left":
+                        reward = -diff
+                elif action_yellow == "Go Left":
                     if self.action[1] > self.action[0]:
                         diff = abs(self.action[0] - self.action[1])
-                        reward = self.worse_distance + diff
+                        reward = +diff
                     else:
                         diff = abs(self.action[1] - self.action[0])
-                        reward = self.worse_distance - diff
+                        reward = -diff
 
             else:
-                reward = self.worse_distance
+                if distance_white != -np.inf:
+                    if action_white == "Go Right":
+                        if (
+                            self.action[1] < self.action[0]
+                        ):  # actually going right, thus reward
+                            diff = abs(self.action[1] - self.action[0])
+                            reward = self.worse_distance + diff
+                        else:
+                            diff = abs(
+                                self.action[0] - self.action[1]
+                            )  # actually NOT going right, thus penalize
+                            reward = self.worse_distance - diff
+                    elif action_white == "Go Left":
+                        if self.action[1] > self.action[0]:
+                            diff = abs(self.action[0] - self.action[1])
+                            reward = self.worse_distance + diff
+                        else:
+                            diff = abs(self.action[1] - self.action[0])
+                            reward = self.worse_distance - diff
+
+                else:
+                    reward = self.worse_distance
+        else:
+            reward = self.worse_distance
 
         print(self.action)
         return reward  # + sum(self.buffer_directions) - 10
@@ -1853,7 +1878,7 @@ class Simulator(gym.Env):
 
         # Step 1: Mask the top two-thirds of the image (make them black)
         height, width, _ = image.shape
-        mask_height = height // 3  # Top third of the image is blacked out
+        mask_height = height // 2  # Top third of the image is blacked out
         image[mask_height:, :] = 0  # Set the top third to black (0)
         cv2.imshow("Clipped Image", image)
         cv2.waitKey(1)
@@ -1874,6 +1899,7 @@ class Simulator(gym.Env):
         mask_white = cv2.inRange(hsv, lower_white, upper_white)
 
         # Step 3: Find contours in the yellow mask
+
         contours_yellow, _ = cv2.findContours(
             mask_yellow, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
@@ -1903,13 +1929,14 @@ class Simulator(gym.Env):
 
         # Step 5: Define the reference point (x=center of image, y=10% of image height)
         ref_x = width // 2
-        ref_y = int(height * 0.1)  # 10% of the image height (near the top)
+        ref_y = 0  # int(height * 0.1)  # 10% of the image height (near the top)
 
         # Step 6: Calculate the distance from the reference point to the centroids
         distance_yellow = -np.inf
         distance_white = -np.inf
 
         if centroid_x_yellow is not None and centroid_y_yellow is not None:
+
             distance_yellow = np.sqrt(
                 (centroid_x_yellow - ref_x) ** 2 + (centroid_y_yellow - ref_y) ** 2
             )
@@ -1924,36 +1951,52 @@ class Simulator(gym.Env):
 
         # Draw the centroid (green for yellow, red for white) and reference point (blue)
         if centroid_x_yellow is not None and centroid_y_yellow is not None:
+
             cv2.circle(
-                result_image, (centroid_x_yellow, centroid_y_yellow), 5, (0, 255, 0), -1
+                result_image, (centroid_x_yellow, centroid_y_yellow), 2, (0, 255, 0), -1
             )  # Green dot for yellow
         if centroid_x_white is not None and centroid_y_white is not None:
             cv2.circle(
                 result_image,
                 (centroid_x_white, centroid_y_white),
-                5,
+                2,
                 (255, 255, 255),
                 -1,
             )  # White dot for white
 
         # Draw reference point in blue
-        cv2.circle(result_image, (ref_x, ref_y), 5, (255, 0, 0), -1)
+        cv2.circle(result_image, (ref_x, ref_y), 2, (255, 0, 0), -1)
 
         # Show the processed image
         cv2.imshow("Processed Image", result_image)
         cv2.waitKey(1)
 
         # Step 9: Determine the action based on the white centroid's position
-        action = None
+        action_according_white = None
         if centroid_x_white is not None and centroid_y_white is not None:
             # Check if white centroid is in the left or right area
             if centroid_x_white < width / 2:  # In the left area
-                action = "Go Right"
+
+                action_according_white = "Go Right"
             else:  # In the right area
-                action = "Go Left"
+                action_according_white = "Go Left"
+
+        action_according_yellow = None
+        if centroid_x_yellow is not None and centroid_y_yellow is not None:
+            # Check if yellow centroid is in the left or right area
+            if centroid_x_yellow < width / 2:  # In the left area
+                action_according_yellow = "Go Left"
+            else:  # In the right area
+                action_according_yellow = "Go Right"
 
         # Return the result image and distances (for both yellow and white lines)
-        return distance_yellow, distance_white, action
+
+        return (
+            distance_yellow,
+            distance_white,
+            action_according_white,
+            action_according_yellow,
+        )
 
     def boost_contrast_and_saturation(
         self, image, contrast_factor=1.7, saturation_factor=1.7
