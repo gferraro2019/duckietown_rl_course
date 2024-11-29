@@ -125,7 +125,7 @@ class Wrapper(DuckietownEnv):
         for wrapper in self.wrappers_list:
             img = wrapper.apply_transformation(img)
         if self.prewiev_observation:
-            cv2.imshow("Preview Observation", img)
+            cv2.imshow("Preview Observation", img[:, :, :3])
             cv2.waitKey(1)
         return img
 
@@ -161,6 +161,43 @@ class Wrapper_YellowWhiteMask(Wrapper):
         else:
             return cv2.merge([b, g, r, mask.astype("float64")])
 
+    def boost_contrast_and_saturation(
+        self, image, contrast_factor=1.7, saturation_factor=1.7
+    ):
+        """
+        Boosts the contrast and saturation of an RGB image.
+
+        Parameters:
+        - image: The input RGB image (as a NumPy array).
+        - contrast_factor: The factor by which to enhance contrast (default 1.5).
+        - saturation_factor: The factor by which to increase saturation (default 1.5).
+
+        Returns:
+        - The enhanced image with increased contrast and saturation.
+        """
+
+        # Step 1: Boost contrast
+        # Convert the image to float32 for better precision
+        contrast_image = image.astype(np.float32)
+
+        # Apply contrast enhancement (scale pixel values by contrast_factor)
+        contrast_image = np.clip(contrast_image * contrast_factor, 0, 255)
+
+        # Convert back to uint8
+        contrast_image = contrast_image.astype(np.uint8)
+
+        # Step 2: Boost saturation
+        # Convert the image to HSV color space
+        hsv = cv2.cvtColor(contrast_image, cv2.COLOR_RGB2HSV)
+
+        # Increase the saturation (S channel)
+        hsv[..., 1] = np.clip(hsv[..., 1] * saturation_factor, 0, 255)
+
+        # Convert back to RGB color space
+        enhanced_image = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+
+        return enhanced_image
+
     def create_white_yellow_mask(self, image):
         """
         Creates a mask that retains only the white and yellow lines from the input image.
@@ -171,6 +208,7 @@ class Wrapper_YellowWhiteMask(Wrapper):
         Returns:
         - mask: A binary mask where white and yellow regions are retained.
         """
+        image = self.boost_contrast_and_saturation(image)
         # Step 1: Convert the image to the HSV color space
         hsv = cv2.cvtColor(
             (image * 255).astype("uint8"), cv2.COLOR_RGB2HSV
