@@ -44,11 +44,11 @@ class ValueNetwork(nn.Module):
         self.value.bias.data.zero_()
 
     def forward(self, states):
-        x = nn.functional.relu(self.conv1(states))
-        x = nn.functional.relu(self.conv2(x))
+        x = nn.functional.elu(self.conv1(states))
+        x = nn.functional.elu(self.conv2(x))
         x = torch.flatten(x, -3)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.hidden2(x))
+        x = F.elu(self.fc1(x))
+        x = F.elu(self.hidden2(x))
         return self.value(x)
 
 
@@ -85,12 +85,12 @@ class QvalueNetwork(nn.Module):
         self.q_value.bias.data.zero_()
 
     def forward(self, states, actions):
-        x = nn.functional.relu(self.conv1(states))
-        x = nn.functional.relu(self.conv2(x))
+        x = nn.functional.elu(self.conv1(states))
+        x = nn.functional.elu(self.conv2(x))
         x = torch.flatten(x, -3)
         x = torch.cat([x, actions], dim=1)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.hidden2(x))
+        x = F.elu(self.fc1(x))
+        x = F.elu(self.hidden2(x))
         return self.q_value(x)
 
 
@@ -135,11 +135,11 @@ class PolicyNetwork(nn.Module):
         self.log_std.bias.data.zero_()
 
     def forward(self, states):
-        x = nn.functional.relu(self.conv1(states))
-        x = nn.functional.relu(self.conv2(x))
+        x = nn.functional.elu(self.conv1(states))
+        x = nn.functional.elu(self.conv2(x))
         x = torch.flatten(x, -3)  # Flatten the tensor
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.hidden2(x))
+        x = F.elu(self.fc1(x))
+        x = F.elu(self.hidden2(x))
 
         mu = self.mu(x)
         log_std = self.log_std(x)
