@@ -98,7 +98,7 @@ class SAC:
             action_values1 = self.qnet1(states, actions)
             action_values2 = self.qnet2(states, actions)
 
-            target_actions, target_actions_log_probs = self.policy_network.get_action(
+            target_actions, target_actions_log_probs,entropy = self.policy_network.get_action(
                 next_states
             )
             next_action_values = torch.min(
@@ -123,7 +123,7 @@ class SAC:
             self.q_optimizer.step()
 
             if global_step % self.policy_frequency == 0:
-                actions, log_actions_values = self.policy_network.get_action(states)
+                actions, log_actions_values, entropy = self.policy_network.get_action(states)
 
                 actions_values = torch.min(
                     self.qnet1(states, actions), self.qnet2(states, actions)
@@ -152,10 +152,11 @@ class SAC:
                     target_param.data.copy_(
                         self.tau * param.data + (1 - self.tau) * target_param.data
                     )
-
+        return entropy
+    
     def select_action(self, states):
-        action, _ = self.policy_network.get_action(states)
-        return np.array(action.detach().cpu().tolist())
+        action, _, entropy = self.policy_network.get_action(states)
+        return np.array(action.detach().cpu().tolist()),entropy
 
     @staticmethod
     def soft_update_target_network(local_network, target_network, tau=0.005):
