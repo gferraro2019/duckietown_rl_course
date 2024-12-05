@@ -1791,7 +1791,7 @@ class Simulator(gym.Env):
         return [gx, gy, gz], angle
 
     def compute_reward(self, pos, angle, speed):
-        
+
         lp = self.get_lane_pos2(pos, angle)
         self.lp = lp
         (
@@ -1801,86 +1801,30 @@ class Simulator(gym.Env):
             action_based_on_yellow,
         ) = self.process_image(self.img_array)
 
+        rw_white = 0
+        rw_yellow = 0
+
         print(action_fased_on_white)
-        if speed > 0:
-            # if speed > 0, consider proximity to the tellow baricenter or distance from white baricenter
 
-            if distance_from_yellow != -np.inf:
-                # if the yellow baricenter is present in the mask
-                reward = -distance_from_yellow / 10
+        # if the yellow baricenter is present in the mask
+        if distance_from_yellow != -np.inf:
+            rw_yellow = 64 - distance_from_yellow
 
-                # update the worse reward to normalize lately
-                if self.worse_distance > distance_from_yellow:
-                    self.worse_distance = -distance_from_yellow
-
-                if action_based_on_yellow == "Go Right":
-                    # if actually goes right, thus reward proportionally to the amount of steering
-                    if self.action[1] < self.action[0]:
-                        diff = abs(self.action[1] - self.action[0])
-                        reward = +diff/10
-
-                    # if doesn't go right, thus penalize proportionally to the amount of steering
-                    else:
-                        diff = abs(self.action[0] - self.action[1])
-                        reward = -diff
-
-                elif action_based_on_yellow == "Go Left":
-                    if self.action[1] > self.action[0]:
-                        diff = abs(self.action[0] - self.action[1])
-                        reward = +diff/10
-                    else:
-                        diff = abs(self.action[1] - self.action[0])
-                        reward = -diff
-
-                # if action is None
-                else:
-                    reward = self.worse_distance
-
-            # if the yellow baricenter is not in the mask
-            else:
-
-                if distance_from_white != -np.inf:
-                    if action_fased_on_white == "Go Right":
-                        if self.action[1] < self.action[0]:
-                            # if actually goes right, thus penalize more than proportionally to the amount of steering
-                            diff = abs(self.action[1] - self.action[0])
-                            reward = self.worse_distance + diff/10
-                        else:
-                            # if doesn't go right, thus reward proportionally to the amount of steering
-                            diff = abs(self.action[0] - self.action[1])
-                            reward = self.worse_distance - diff
-
-                    elif action_fased_on_white == "Go Left":
-                        if self.action[1] > self.action[0]:
-                            diff = abs(self.action[0] - self.action[1])
-                            reward = self.worse_distance + diff/10
-                        else:
-                            diff = abs(self.action[1] - self.action[0])
-                            reward = self.worse_distance - diff 
-
-                    # if action is None
-                    else:
-                        reward = self.worse_distance
-
-                # if the white baricenter is not in the mask too, penalize but less than having a non-positive speed
-                else:
-                    reward = self.worse_distance * 2
-        
-            reward+=speed/(self.max_speed*10)
+        # if the yellow baricenter is not in the mask
         else:
-            # if speed <= 0 consider distance from white baricenter
-            reward = self.worse_distance * 5
+            # if the white baricenter is in the mask too
+            if distance_from_white != -np.inf:
+                rw_white = distance_from_white
 
-        # print(self.action)
+        reward = (rw_yellow + rw_white) * speed
+
         return reward
-
-
 
     # def compute_reward(self, pos, angle, speed):
     #     rw_4_y = 0
     #     rw_4_w = 0
     #     worse_reward = -100
-        
+
     #     lp = self.get_lane_pos2(pos, angle)
     #     self.lp = lp
     #     (
@@ -1890,7 +1834,6 @@ class Simulator(gym.Env):
     #         action_based_on_yellow,
     #     ) = self.process_image(self.img_array)
 
-        
     #     # if the yellow baricenter is present in the mask
     #     if distance_from_yellow != -np.inf:
     #         rw_4_y = -distance_from_yellow
@@ -1899,7 +1842,7 @@ class Simulator(gym.Env):
 
     #     # if the white baricenter is in the mask
     #     if distance_from_white != -np.inf:
-    #         rw_4_w = -self.worse_distance + distance_from_white                
+    #         rw_4_w = -self.worse_distance + distance_from_white
 
     #     # if at least one baricenter is present in the mask
     #     if distance_from_yellow != -np.inf or distance_from_white != -np.inf:
@@ -1908,8 +1851,6 @@ class Simulator(gym.Env):
     #         reward = worse_reward
 
     #     return reward / abs(worse_reward)
-
-
 
     def process_image(self, image):
         """
@@ -1942,7 +1883,7 @@ class Simulator(gym.Env):
         upper_yellow = np.array([50, 255, 255])  # Upper bound for yellow
 
         # Define the range for white color in HSV
-        lower_white = np.array([0, 0, 200])  # Lower bound for white
+        lower_white = np.array([0, 0, 100])  # Lower bound for white
         upper_white = np.array([180, 25, 255])  # Upper bound for white
 
         # Create masks for yellow and white regions
@@ -1991,16 +1932,15 @@ class Simulator(gym.Env):
             # distance_from_yellow = np.sqrt(
             #     (centroid_x_yellow - ref_x) ** 2 + (centroid_y_yellow - ref_y) ** 2
             # )
-            
-            
-            #distance from center
+
+            # distance from center
             distance_from_yellow = np.sqrt(
-                (centroid_x_yellow - 0) ** 2 + (centroid_y_yellow - height/2) ** 2
+                (centroid_x_yellow - 0) ** 2 + (centroid_y_yellow - height / 2) ** 2
             )
 
         if centroid_x_white is not None and centroid_y_white is not None:
             distance_from_white = np.sqrt(
-                (centroid_x_white - ref_x) ** 2 + (centroid_y_white - ref_y) ** 2
+                (centroid_x_white - width) ** 2 + (centroid_y_white - height / 2) ** 2
             )
 
         # Step 7: Create a new black image for the result
@@ -2279,8 +2219,8 @@ class Simulator(gym.Env):
             reward = self.compute_reward(self.cur_pos, self.cur_angle, self.speed)
             msg = ""
             done_code = "in-progress"
-            
-        reward/=np.abs(self.reward_invalid_pose)
+
+        reward /= np.abs(self.reward_invalid_pose)
         return DoneRewardInfo(
             done=done, done_why=msg, reward=reward, done_code=done_code
         )

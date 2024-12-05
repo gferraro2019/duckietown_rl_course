@@ -78,7 +78,7 @@ parser.add_argument("--n_chans", default=3, type=int)
 parser.add_argument("--n_frames", default=3, type=int)
 parser.add_argument("--n_envs", default=1, type=int)
 parser.add_argument("--tau", default=0.001, type=float)
-parser.add_argument("--reward_invalid_pose", default=-1000, type=int)
+parser.add_argument("--reward_invalid_pose", default=-77, type=int)
 parser.add_argument("--alpha", default=0.05, type=float)
 parser.add_argument("--collect_random_steps", default=3000, type=int)
 
