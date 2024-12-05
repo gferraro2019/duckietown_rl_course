@@ -199,7 +199,7 @@ def update(dt):
     dones = []
 
     if timesteps < collect_random_timesteps:
-        action = 2 * np.random.rand(1, 2) - 1
+        action = 2 * np.random.rand(n_envs, 2) - 1
 
     else:
         action = agent.select_action(torch.tensor(obs, dtype=torch.float32).to(device))
