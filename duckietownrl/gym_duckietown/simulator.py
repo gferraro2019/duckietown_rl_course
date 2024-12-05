@@ -427,8 +427,8 @@ class Simulator(gym.Env):
         self.x = 0
         self.y = 0
         self.last_action = np.array([0, 0])
-        self.last_distance_yellow = 100
-        self.last_distance_white = 100
+        self.last_distance_from_yellow = 100
+        self.last_distance_from_white = 100
 
         self.wheelVels = np.array([0, 0])
         self.lp = None
@@ -1791,83 +1791,86 @@ class Simulator(gym.Env):
         return [gx, gy, gz], angle
 
     def compute_reward(self, pos, angle, speed):
-        # Compute the collision avoidance penalty
-        col_penalty = self.proximity_penalty2(pos, angle)
+        
+        lp = self.get_lane_pos2(pos, angle)
+        self.lp = lp
+        (
+            distance_from_yellow,
+            distance_from_white,
+            action_fased_on_white,
+            action_based_on_yellow,
+        ) = self.process_image(self.img_array)
 
-        reward = self.reward_invalid_pose / 2
-        # Get the position relative to the right lane tangent
-        try:
-            lp = self.get_lane_pos2(pos, angle)
-            self.lp = lp
-        except NotInLane:
-            reward = 40 * col_penalty
-        else:
-            timestep_cost = 0
-
-        distance_yellow, distance_white, action_white, action_yellow = (
-            self.process_image(self.img_array)
-        )
-
-        print(action_white)
+        print(action_fased_on_white)
         if speed > 0:
-            if distance_yellow != -np.inf:
-                reward = -distance_yellow / 10
-                # update worse reward
-                if self.worse_distance > distance_yellow:
-                    self.worse_distance = -distance_yellow
+            # if speed > 0, consider proximity to the tellow baricenter or distance from white baricenter
 
-                if action_yellow == "Go Right":
-                    if (
-                        self.action[1] < self.action[0]
-                    ):  # actually going right, thus reward
+            if distance_from_yellow != -np.inf:
+                # if the yellow baricenter is present in the mask
+                reward = -distance_from_yellow / 10
+
+                # update the worse reward to normalize lately
+                if self.worse_distance > distance_from_yellow:
+                    self.worse_distance = -distance_from_yellow
+
+                if action_based_on_yellow == "Go Right":
+                    # if actually goes right, thus reward proportionally to the amount of steering
+                    if self.action[1] < self.action[0]:
                         diff = abs(self.action[1] - self.action[0])
                         reward = +diff
+
+                    # if doesn't go right, thus penalize proportionally to the amount of steering
                     else:
-                        diff = abs(
-                            self.action[0] - self.action[1]
-                        )  # actually NOT going right, thus penalize
+                        diff = abs(self.action[0] - self.action[1])
                         reward = -diff
 
-                elif action_yellow == "Go Left":
+                elif action_based_on_yellow == "Go Left":
                     if self.action[1] > self.action[0]:
                         diff = abs(self.action[0] - self.action[1])
                         reward = +diff
                     else:
                         diff = abs(self.action[1] - self.action[0])
                         reward = -diff
-                else:  # None
+
+                # if action is None
+                else:
                     reward = self.worse_distance
 
+            # if the yellow baricenter is not in the mask
             else:
-                if distance_white != -np.inf:
-                    if action_white == "Go Right":
-                        if (
-                            self.action[1] < self.action[0]
-                        ):  # actually going right, thus reward
+
+                if distance_from_white != -np.inf:
+                    if action_fased_on_white == "Go Right":
+                        if self.action[1] < self.action[0]:
+                            # if actually goes right, thus penalize more than proportionally to the amount of steering
                             diff = abs(self.action[1] - self.action[0])
-                            reward = self.worse_distance + diff * 6
+                            reward = self.worse_distance + diff * 3
                         else:
-                            diff = abs(
-                                self.action[0] - self.action[1]
-                            )  # actually NOT going right, thus penalize
-                            reward = self.worse_distance - diff * 6
-                    elif action_white == "Go Left":
+                            # if doesn't go right, thus reward proportionally to the amount of steering
+                            diff = abs(self.action[0] - self.action[1])
+                            reward = self.worse_distance - diff * 3
+
+                    elif action_fased_on_white == "Go Left":
                         if self.action[1] > self.action[0]:
                             diff = abs(self.action[0] - self.action[1])
-                            reward = self.worse_distance + diff * 6
+                            reward = self.worse_distance + diff * 3
                         else:
                             diff = abs(self.action[1] - self.action[0])
-                            reward = self.worse_distance - diff * 6
-                    else:  # None
+                            reward = self.worse_distance - diff * 3
+
+                    # if action is None
+                    else:
                         reward = self.worse_distance
 
+                # if the white baricenter is not in the mask too, penalize but less than having a non-positive speed
                 else:
                     reward = self.worse_distance * 2
         else:
+            # if speed <= 0 consider distance from white baricenter
             reward = self.worse_distance * 3
 
         print(self.action)
-        return reward  # + sum(self.buffer_directions) - 10
+        return reward / np.abs(self.reward_invalid_pose)
 
     def process_image(self, image):
         """
@@ -1881,7 +1884,7 @@ class Simulator(gym.Env):
         - The image with the centroids of yellow and white lines and the reference point marked, and the distance from the reference point to the centroids.
         If no yellow or white line is detected, returns -np.inf.
         """
-        image = self.boost_contrast_and_saturation(image)
+        # image = self.boost_contrast_and_saturation(image)
 
         # Step 1: Mask the top two-thirds of the image (make them black)
         height, width, _ = image.shape
@@ -1893,9 +1896,11 @@ class Simulator(gym.Env):
         # Step 2: Convert the image to HSV color space
         hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
 
-        # Define the range for yellow color in HSV
-        lower_yellow = np.array([15, 150, 150])  # Lower bound for yellow
-        upper_yellow = np.array([45, 255, 255])  # Upper bound for yellow
+        # # Define the range for yellow color in HSV
+        # lower_yellow = np.array([15, 150, 150])  # Lower bound for yellow
+        # upper_yellow = np.array([45, 255, 255])  # Upper bound for yellow
+        lower_yellow = np.array([20, 50, 100])  # Lower bound for yellow
+        upper_yellow = np.array([50, 255, 255])  # Upper bound for yellow
 
         # Define the range for white color in HSV
         lower_white = np.array([0, 0, 200])  # Lower bound for white
@@ -1939,17 +1944,17 @@ class Simulator(gym.Env):
         ref_y = 0  # int(height * 0.1)  # 10% of the image height (near the top)
 
         # Step 6: Calculate the distance from the reference point to the centroids
-        distance_yellow = -np.inf
-        distance_white = -np.inf
+        distance_from_yellow = -np.inf
+        distance_from_white = -np.inf
 
         if centroid_x_yellow is not None and centroid_y_yellow is not None:
 
-            distance_yellow = np.sqrt(
+            distance_from_yellow = np.sqrt(
                 (centroid_x_yellow - ref_x) ** 2 + (centroid_y_yellow - ref_y) ** 2
             )
 
         if centroid_x_white is not None and centroid_y_white is not None:
-            distance_white = np.sqrt(
+            distance_from_white = np.sqrt(
                 (centroid_x_white - ref_x) ** 2 + (centroid_y_white - ref_y) ** 2
             )
 
@@ -1999,8 +2004,8 @@ class Simulator(gym.Env):
         # Return the result image and distances (for both yellow and white lines)
 
         return (
-            distance_yellow,
-            distance_white,
+            distance_from_yellow,
+            distance_from_white,
             action_according_white,
             action_according_yellow,
         )
@@ -2133,51 +2138,51 @@ class Simulator(gym.Env):
         cv2.waitKey(1)  # Wait for a key press to close the window
 
         # Step 5: Calculate the distance from the yellow centroid to the center of the image
-        distance_yellow = 0
+        distance_from_yellow = 0
         if yellow_found:
             # Get the center of the image (for comparison)
             image_center = image.shape[1] // 2
 
-            # Calculate the horizontal distance_yellow from the centroid to the center
-            distance_yellow = cX_yellow - image_center
+            # Calculate the horizontal distance_from_yellow from the centroid to the center
+            distance_from_yellow = cX_yellow - image_center
 
-            # Control logic based on the distance_yellow
-            if distance_yellow < -50:
+            # Control logic based on the distance_from_yellow
+            if distance_from_yellow < -50:
                 action_according_yellow = "Turn Left"
-            elif distance_yellow > 50:
+            elif distance_from_yellow > 50:
                 action_according_yellow = "Turn Right"
             else:
                 action_according_yellow = "Move Forward"
         else:
             # If no yellow line detected
             action_according_yellow = "No Line Detected"
-            distance_yellow = 100
+            distance_from_yellow = 100
 
-        distance_white = 0
+        distance_from_white = 0
         if white_found:
             # Get the center of the image (for comparison)
             image_center = image.shape[1] // 2
 
-            # Calculate the horizontal distance_white from the centroid to the center
-            distance_white = cX_white - image_center
+            # Calculate the horizontal distance_from_white from the centroid to the center
+            distance_from_white = cX_white - image_center
 
-            # Control logic based on the distance_white
-            if distance_white < -50:
+            # Control logic based on the distance_from_white
+            if distance_from_white < -50:
                 action_according_white = "Turn Left"
-            elif distance_white > 50:
+            elif distance_from_white > 50:
                 action_according_white = "Turn Right"
             else:
                 action_according_white = "Move Forward"
         else:
             # If no white line detected
             action_according_white = "No Line Detected"
-            distance_white = 100
+            distance_from_white = 100
 
-        # Return the distance_yellow and the action
+        # Return the distance_from_yellow and the action
         return (
-            -np.abs(distance_yellow),
+            -np.abs(distance_from_yellow),
             action_according_yellow,
-            -np.abs(distance_white),
+            -np.abs(distance_from_white),
             action_according_white,
         )
 
