@@ -58,6 +58,14 @@ parser.add_argument(
     "--return_masked_obs",
     action="store_true",
     default=False,
+
+    help="to use yellow and white wrapper",
+)
+
+parser.add_argument(
+    "--yellow_mask",
+    action="store_true",
+    default=False,
     help="to use yellow and white wrapper",
 )
 
@@ -81,7 +89,7 @@ parser.add_argument("--path", default="/media/g.ferraro/DONNEES", type=str)
 
 args = parser.parse_args()
 
-yellow_mask = True
+yellow_mask = args.yellow_mask
 n_frames = args.n_frames
 n_chans = args.n_chans  # 1 for B/W images 3 for RGBs
 n_envs = args.n_envs
