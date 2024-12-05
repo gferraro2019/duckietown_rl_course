@@ -1866,10 +1866,10 @@ class Simulator(gym.Env):
                 else:
                     reward = self.worse_distance * 2
         
-            reward+=speed/self.max_speed
+            reward+=speed/(self.max_speed*10)
         else:
             # if speed <= 0 consider distance from white baricenter
-            reward = self.worse_distance * 3
+            reward = self.worse_distance * 5
 
         # print(self.action)
         return reward
@@ -1988,8 +1988,14 @@ class Simulator(gym.Env):
 
         if centroid_x_yellow is not None and centroid_y_yellow is not None:
 
+            # distance_from_yellow = np.sqrt(
+            #     (centroid_x_yellow - ref_x) ** 2 + (centroid_y_yellow - ref_y) ** 2
+            # )
+            
+            
+            #distance from center
             distance_from_yellow = np.sqrt(
-                (centroid_x_yellow - ref_x) ** 2 + (centroid_y_yellow - ref_y) ** 2
+                (centroid_x_yellow - 0) ** 2 + (centroid_y_yellow - height/2) ** 2
             )
 
         if centroid_x_white is not None and centroid_y_white is not None:
