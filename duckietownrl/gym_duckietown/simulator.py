@@ -271,7 +271,7 @@ class Simulator(gym.Env):
         :param enable_leds: Enables LEDs drawing.
         """
         self.reward_invalid_pose = reward_invalid_pose
-        self.worse_distance = 100
+        self.worse_distance = 20
 
         self.last_dot_dir = -1
         self.max_speed = -1.2
@@ -1817,7 +1817,7 @@ class Simulator(gym.Env):
                     # if actually goes right, thus reward proportionally to the amount of steering
                     if self.action[1] < self.action[0]:
                         diff = abs(self.action[1] - self.action[0])
-                        reward = +diff
+                        reward = +diff/10
 
                     # if doesn't go right, thus penalize proportionally to the amount of steering
                     else:
@@ -1827,7 +1827,7 @@ class Simulator(gym.Env):
                 elif action_based_on_yellow == "Go Left":
                     if self.action[1] > self.action[0]:
                         diff = abs(self.action[0] - self.action[1])
-                        reward = +diff
+                        reward = +diff/10
                     else:
                         diff = abs(self.action[1] - self.action[0])
                         reward = -diff
@@ -1844,19 +1844,19 @@ class Simulator(gym.Env):
                         if self.action[1] < self.action[0]:
                             # if actually goes right, thus penalize more than proportionally to the amount of steering
                             diff = abs(self.action[1] - self.action[0])
-                            reward = self.worse_distance + diff * 3
+                            reward = self.worse_distance + diff/10
                         else:
                             # if doesn't go right, thus reward proportionally to the amount of steering
                             diff = abs(self.action[0] - self.action[1])
-                            reward = self.worse_distance - diff * 3
+                            reward = self.worse_distance - diff
 
                     elif action_fased_on_white == "Go Left":
                         if self.action[1] > self.action[0]:
                             diff = abs(self.action[0] - self.action[1])
-                            reward = self.worse_distance + diff * 3
+                            reward = self.worse_distance + diff/10
                         else:
                             diff = abs(self.action[1] - self.action[0])
-                            reward = self.worse_distance - diff * 3
+                            reward = self.worse_distance - diff 
 
                     # if action is None
                     else:
@@ -1865,12 +1865,51 @@ class Simulator(gym.Env):
                 # if the white baricenter is not in the mask too, penalize but less than having a non-positive speed
                 else:
                     reward = self.worse_distance * 2
+        
+            reward+=speed/self.max_speed
         else:
             # if speed <= 0 consider distance from white baricenter
             reward = self.worse_distance * 3
 
-        print(self.action)
-        return reward / np.abs(self.reward_invalid_pose)
+        # print(self.action)
+        return reward
+
+
+
+    # def compute_reward(self, pos, angle, speed):
+    #     rw_4_y = 0
+    #     rw_4_w = 0
+    #     worse_reward = -100
+        
+    #     lp = self.get_lane_pos2(pos, angle)
+    #     self.lp = lp
+    #     (
+    #         distance_from_yellow,
+    #         distance_from_white,
+    #         action_fased_on_white,
+    #         action_based_on_yellow,
+    #     ) = self.process_image(self.img_array)
+
+        
+    #     # if the yellow baricenter is present in the mask
+    #     if distance_from_yellow != -np.inf:
+    #         rw_4_y = -distance_from_yellow
+    #         if self.worse_distance > distance_from_yellow:
+    #             self.worse_distance = distance_from_yellow
+
+    #     # if the white baricenter is in the mask
+    #     if distance_from_white != -np.inf:
+    #         rw_4_w = -self.worse_distance + distance_from_white                
+
+    #     # if at least one baricenter is present in the mask
+    #     if distance_from_yellow != -np.inf or distance_from_white != -np.inf:
+    #         reward = rw_4_y*10 + rw_4_w/10
+    #     else:
+    #         reward = worse_reward
+
+    #     return reward / abs(worse_reward)
+
+
 
     def process_image(self, image):
         """
@@ -2234,6 +2273,8 @@ class Simulator(gym.Env):
             reward = self.compute_reward(self.cur_pos, self.cur_angle, self.speed)
             msg = ""
             done_code = "in-progress"
+            
+        reward/=np.abs(self.reward_invalid_pose)
         return DoneRewardInfo(
             done=done, done_why=msg, reward=reward, done_code=done_code
         )
