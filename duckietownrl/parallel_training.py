@@ -58,7 +58,6 @@ parser.add_argument(
     "--return_masked_obs",
     action="store_true",
     default=False,
-
     help="to use yellow and white wrapper",
 )
 
@@ -81,7 +80,7 @@ parser.add_argument("--n_chans", default=3, type=int)
 parser.add_argument("--n_frames", default=3, type=int)
 parser.add_argument("--n_envs", default=1, type=int)
 parser.add_argument("--tau", default=0.005, type=float)
-parser.add_argument("--reward_invalid_pose", default=-100, type=int)
+parser.add_argument("--reward_invalid_pose", default=-77, type=int)
 parser.add_argument("--alpha", default=0.20, type=float)
 parser.add_argument("--collect_random_steps", default=3000, type=int)
 parser.add_argument("--path", default="/media/g.ferraro/DONNEES", type=str)
