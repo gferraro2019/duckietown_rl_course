@@ -1816,7 +1816,10 @@ class Simulator(gym.Env):
             if distance_from_white != -np.inf:
                 rw_white = distance_from_white
 
-        reward = (rw_yellow + rw_white) * speed
+        if speed > 0.1:
+            reward = (rw_yellow + rw_white) - abs(self.action[0] - self.action[1]) * 50
+        else:
+            reward = -100
 
         return reward
 
