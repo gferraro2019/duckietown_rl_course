@@ -201,7 +201,9 @@ def update(dt):
         action = 2 * np.random.rand(n_envs, 2) - 1
 
     else:
-        action = agent.select_action(torch.tensor(obs, dtype=torch.float32).to(device))
+        action, entropy = agent.select_action(torch.tensor(obs, dtype=torch.float32).to(device))
+        wandb.log({"entropy":entropy})
+        
 
     for i, env in enumerate(envs):
         next_obs, reward, done, info = env.step(action[i])
@@ -247,7 +249,8 @@ def update(dt):
         np.random.random() < probability_training
         and timesteps >= collect_random_timesteps
     ):
-        agent.train(timesteps, device)
+        entropy = agent.train(timesteps, device)
+    
 
     obs = next_obs
 
