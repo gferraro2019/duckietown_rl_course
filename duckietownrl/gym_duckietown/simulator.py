@@ -1801,25 +1801,24 @@ class Simulator(gym.Env):
             action_based_on_yellow,
         ) = self.process_image(self.img_array)
 
-        rw_white = 0
-        rw_yellow = 0
+        rw_yellow = -100
+        rw_white = -100
 
         print(action_fased_on_white)
 
         # if the yellow baricenter is present in the mask
         if distance_from_yellow != -np.inf:
-            rw_yellow = 64 - distance_from_yellow
+            rw_yellow = distance_from_yellow
 
         # if the yellow baricenter is not in the mask
-        else:
-            # if the white baricenter is in the mask too
-            if distance_from_white != -np.inf:
-                rw_white = distance_from_white
+
+        if distance_from_white != -np.inf:
+            rw_white = distance_from_white
 
         if speed > 0.1:
-            reward = (rw_yellow + rw_white) - abs(self.action[0] - self.action[1]) * 50
+            reward = rw_yellow + rw_white  # - abs(self.action[0] - self.action[1]) * 50
         else:
-            reward = -100
+            reward = -300
 
         return reward
 
@@ -1923,8 +1922,10 @@ class Simulator(gym.Env):
                 break  # Take the first detected white contour
 
         # Step 5: Define the reference point (x=center of image, y=10% of image height)
-        ref_x = width // 2
-        ref_y = 0  # int(height * 0.1)  # 10% of the image height (near the top)
+        ref_x = width
+        ref_y = int(
+            height / 2
+        )  # int(height * 0.1)  # 10% of the image height (near the top)
 
         # Step 6: Calculate the distance from the reference point to the centroids
         distance_from_yellow = -np.inf
@@ -1938,12 +1939,12 @@ class Simulator(gym.Env):
 
             # distance from center
             distance_from_yellow = np.sqrt(
-                (centroid_x_yellow - 0) ** 2 + (centroid_y_yellow - height / 2) ** 2
+                (centroid_x_yellow - width) ** 2 + (centroid_y_yellow - height / 2) ** 2
             )
 
         if centroid_x_white is not None and centroid_y_white is not None:
             distance_from_white = np.sqrt(
-                (centroid_x_white - width) ** 2 + (centroid_y_white - height / 2) ** 2
+                (centroid_x_white - 0) ** 2 + (centroid_y_white - height / 2) ** 2
             )
 
         # Step 7: Create a new black image for the result

@@ -80,7 +80,7 @@ parser.add_argument("--n_chans", default=3, type=int)
 parser.add_argument("--n_frames", default=3, type=int)
 parser.add_argument("--n_envs", default=1, type=int)
 parser.add_argument("--tau", default=0.005, type=float)
-parser.add_argument("--reward_invalid_pose", default=-77, type=int)
+parser.add_argument("--reward_invalid_pose", default=-300, type=int)
 parser.add_argument("--alpha", default=0.20, type=float)
 parser.add_argument("--collect_random_steps", default=3000, type=int)
 parser.add_argument("--path", default="/media/g.ferraro/DONNEES", type=str)
@@ -201,9 +201,10 @@ def update(dt):
         action = 2 * np.random.rand(n_envs, 2) - 1
 
     else:
-        action, entropy = agent.select_action(torch.tensor(obs, dtype=torch.float32).to(device))
-        wandb.log({"entropy":entropy})
-        
+        action, entropy = agent.select_action(
+            torch.tensor(obs, dtype=torch.float32).to(device)
+        )
+        wandb.log({"entropy": entropy})
 
     for i, env in enumerate(envs):
         next_obs, reward, done, info = env.step(action[i])
@@ -250,7 +251,6 @@ def update(dt):
         and timesteps >= collect_random_timesteps
     ):
         entropy = agent.train(timesteps, device)
-    
 
     obs = next_obs
 
