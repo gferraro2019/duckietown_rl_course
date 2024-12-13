@@ -242,6 +242,33 @@ def saturate_replay_buffer(replay_buffer):
     print("Done")
 
 
+import configparser
+
+def parse_arguments_from_ini(file_path):
+    config = configparser.ConfigParser()
+    config.read(file_path)
+
+    arguments = {}
+
+    for key, value in config['general'].items():
+        print("Parsing the key: ",key)
+        if value.lower() in ['none',"null"]:
+            value =  None
+        elif value.lower() in ["True",'true', 'yes', '1', 'on']:
+            value = True
+        elif value.lower() in ["False",'false', 'no', '0', 'off']:
+            value = False
+        elif "." in value:
+            value = float(value)
+        elif "/" in value:
+            pass
+        else:
+            value=int(value)
+            
+        arguments[key]=value
+    
+    return arguments
+
 """
 # Simple replay buffer
 class ReplayBuffer(object):

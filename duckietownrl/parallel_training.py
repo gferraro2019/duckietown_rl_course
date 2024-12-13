@@ -13,7 +13,7 @@ from pyglet.window import key  # do not remove, otherwhise render issue
 
 
 from duckietownrl.gym_duckietown.envs import DuckietownEnv
-from duckietownrl.utils.utils import ReplayBuffer, load_replay_buffer
+from duckietownrl.utils.utils import ReplayBuffer, load_replay_buffer, parse_arguments_from_ini
 from duckietownrl.utils.wrappers import (
     Wrapper_BW,
     Wrapper_NormalizeImage,
@@ -39,77 +39,30 @@ wandb.init(
     },
 )
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--seed", default=0, type=int)
-parser.add_argument("--env-name", default=None)
-parser.add_argument("--map-name", default="small_loop")
-parser.add_argument("--distortion", default=False, action="store_true")
-parser.add_argument(
-    "--draw-curve", action="store_true", help="draw the lane following curve"
-)
-parser.add_argument(
-    "--domain-rand", action="store_true", help="enable domain randomization"
-)
 
-parser.add_argument(
-    "--max_steps", default=1500, help="number of steps per episode", type=int
-)
-parser.add_argument(
-    "--return_masked_obs",
-    action="store_true",
-    default=False,
-    help="to use yellow and white wrapper",
-)
+file_config_path="config.ini"
+args = parse_arguments_from_ini(file_config_path)
 
-parser.add_argument(
-    "--yellow_mask",
-    action="store_true",
-    default=False,
-    help="to use yellow and white wrapper",
-)
-
-parser.add_argument("--batch_size", default=64, type=int)
-parser.add_argument("--replay_buffer_size", default=50_000, type=int)
-parser.add_argument("--save_on_episode", default=100, type=int)
-parser.add_argument("--width_frame", default=28, type=int)
-parser.add_argument("--height_frame", default=28, type=int)
-parser.add_argument("--width_preview", default=80, type=int)
-parser.add_argument("--height_preview", default=60, type=int)
-
-parser.add_argument("--n_chans", default=3, type=int)
-parser.add_argument("--n_frames", default=3, type=int)
-parser.add_argument("--n_envs", default=1, type=int)
-parser.add_argument("--tau", default=0.005, type=float)
-parser.add_argument("--reward_invalid_pose", default=-300, type=int)
-parser.add_argument("--alpha", default=0.20, type=float)
-parser.add_argument("--collect_random_steps", default=3000, type=int)
-parser.add_argument("--actor_lr", default=0.001, type=float)
-parser.add_argument("--critic_lr", default=0.001, type=float)
-parser.add_argument("--path", default="/media/g.ferraro/DONNEES", type=str)
-
-
-args = parser.parse_args()
-
-yellow_mask = args.yellow_mask
-n_frames = args.n_frames
-n_chans = args.n_chans  # 1 for B/W images 3 for RGBs
-n_envs = args.n_envs
-resize_shape = (args.width_frame, args.height_frame)  # (width,height)
+yellow_mask = args["yellow_mask"]
+n_frames = args["n_frames"]
+n_chans = args["n_chans  # 1 for B/W images 3 for RGBs"]
+n_envs = args["n_envs"]
+resize_shape = (args["width_frame"], args["height_frame"])  # (width,height)"]
 envs = []
 k = 0
 for i in range(n_envs):
     print(f"creating env N.{i}...")
     env = DuckietownEnv(
-        map_name=args.map_name,
-        distortion=args.distortion,
-        domain_rand=args.domain_rand,
-        max_steps=args.max_steps,
-        seed=args.seed + k,
-        window_width=args.width_preview,
-        window_height=args.height_preview,
+        map_name=args["map_name"],
+        distortion=args["distortion"],
+        domain_rand=args["domain_rand"],
+        max_steps=args["max_steps"],
+        seed=args["seed + k"],
+        window_width=args["width_preview"],
+        window_height=args["height_preview"],
         camera_width=resize_shape[0],
         camera_height=resize_shape[1],
-        reward_invalid_pose=args.reward_invalid_pose,
+        reward_invalid_pose=args["reward_invalid_pose"],
         # user_tile_start=(2, 0),
         # start_pose=(0.34220727, 0, 0.58371305),
         # start_angle=np.pi / 2,
@@ -122,7 +75,7 @@ for i in range(n_envs):
     env.append_wrapper(Wrapper_NormalizeImage(env))
 
     if yellow_mask:
-        return_mask = args.return_masked_obs
+        return_mask = args["return_masked_obs"]
         env.append_wrapper(Wrapper_YellowWhiteMask(env, return_mask))
         if return_mask is False:
             n_chans += 3
@@ -144,11 +97,11 @@ for _ in envs:
 obs = np.stack(l_obs, axis=0)
 
 # create replay buffer
-batch_size = args.batch_size
+batch_size = args["batch_size"]
 state_dim = (n_frames * n_chans, *resize_shape)  # Shape of state input (4, 84, 84)
 action_dim = 2
 replay_buffer = ReplayBuffer(
-    args.replay_buffer_size,
+    args["replay_buffer_size"],
     batch_size,
     state_dim,
     action_dim,
@@ -164,24 +117,24 @@ agent = SAC(
     envs[0].action_space.shape[0],
     replay_buffer=replay_buffer,
     device=device,
-    actor_lr=args.actor_lr,
-    critic_lr=args.critic_lr,
-    tau=args.tau,
-    alpha=args.alpha,
+    actor_lr=args["actor_lr"],
+    critic_lr=args["critic_lr"],
+    tau=args["tau"],
+    alpha=args["alpha"],
 )
 
 tot_episodes = 0
 timesteps = 0
 probability_training = 1.0
-save_on_episodes = args.save_on_episode
+save_on_episodes = args["save_on_episode"]
 running_avg_reward = 0
 
 folder_name = os.path.join("models", f"{datetime.now().strftime('%Y%m%d_%H%M%S')}")
-path = args.path
+path = args["path"]
 
 eps_returns = np.zeros(n_envs)
 once = True
-collect_random_timesteps = args.collect_random_steps
+collect_random_timesteps = args["collect_random_steps"]
 
 
 def update(dt):
