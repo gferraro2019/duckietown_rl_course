@@ -80,7 +80,7 @@ parser.add_argument("--n_envs", default=1, type=int)
 parser.add_argument("--tau", default=0.001, type=float)
 parser.add_argument("--reward_invalid_pose", default=-77, type=int)
 parser.add_argument("--alpha", default=0.05, type=float)
-parser.add_argument("--collect_random_steps", default=3000, type=int)
+parser.add_argument("--collect_random_steps", default=1000, type=int)
 
 
 args = parser.parse_args()
@@ -260,11 +260,12 @@ def update(dt):
 
     else:
         if timesteps < collect_random_timesteps:
-            action = 2 * torch.rand(1, 2) - 1
+            action = 2 * torch.rand(n_envs, 2) - 1
         else:
-            action = agent.select_action(
+            action, entropy = agent.select_action(
                 torch.tensor(obs, dtype=torch.float32).to(device)
             )
+            wandb.log({"entropy": entropy})
 
     # noise = np.random.randint(-300, 300, (n_envs, 2)) * 0.0001
     # noisy_action = action + noise
@@ -316,7 +317,7 @@ def update(dt):
         np.random.random() < probability_training
         and timesteps >= collect_random_timesteps
     ):
-        agent.train(timesteps, device)
+        entropy = agent.train(timesteps, device)
 
     obs = next_obs
 
