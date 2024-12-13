@@ -137,11 +137,13 @@ class ReplayBuffer:
     def sample(self, sample_capacity=None, device="cpu"):
         if self.can_sample():
             if sample_capacity:
-                idx = random.sample(range(len(self)), sample_capacity)
+                idx =np.random.randint(0, len(self), sample_capacity)
 
             else:
-                idx = random.sample(range(len(self)), self.batch_size)
+                idx =np.random.randint(0, len(self), self.batch_size)
+                
             self.indices[:] = idx
+            
 
             rewards = self.rewards[self.indices].to(device)
 
