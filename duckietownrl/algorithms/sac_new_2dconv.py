@@ -90,53 +90,73 @@ class SAC:
             return 0, 0, 0
         else:
             print("training...")
+            # take a batch
             states, actions, rewards, next_states, dones = self.memory.sample(
                 device=device
             )
-            # with torch.no_grad():
-            # Calculating the value target
-            action_values1 = self.qnet1(states, actions)
-            action_values2 = self.qnet2(states, actions)
-
+            
+            # compute a' (target action) and its probs for s'
             target_actions, target_actions_log_probs,entropy = self.policy_network.get_action(
                 next_states
             )
+            
+            # compute q-values from target networks for s',a'  
             next_action_values = torch.min(
-                self.qnet1(next_states, target_actions),
-                self.qnet2(next_states, target_actions),
+                self.qnet1_target(next_states, target_actions),
+                self.qnet2_target(next_states, target_actions),
             )
 
-            expected_action_values = rewards.unsqueeze(-1) + self.gamma * (
+            # compute target
+            expected_action_values = rewards.unsqueeze(-1) + self.gamma * torch.logical_not(dones.unsqueeze(-1))* (
                 next_action_values - self.alpha * target_actions_log_probs
             )
 
+            # compute action values for a and s
+            action_values1 = self.qnet1(states, actions)
+            action_values2 = self.qnet2(states, actions)
+
+
+            # compute the loss with the target
             action_values1_loss = self.q_value_loss(
                 action_values1, expected_action_values
             )
             action_values2_loss = self.q_value_loss(
                 action_values2, expected_action_values
             )
+            
+            # sum the losses
             q_loss = action_values1_loss + action_values2_loss
+            
+            # store loss
             self.q_loss_value = q_loss.item()
+
+            # perform gradient descent
             self.q_optimizer.zero_grad()
             q_loss.backward()
             self.q_optimizer.step()
 
             if global_step % self.policy_frequency == 0:
-                actions, log_actions_values, entropy = self.policy_network.get_action(states)
 
+                # compute a_tilde_theta
+                actions_tilde_theta, log_actions_tilde_theta_values, entropy = self.policy_network.get_action(states)
+
+                # take the min action values
                 actions_values = torch.min(
-                    self.qnet1(states, actions), self.qnet2(states, actions)
+                    self.qnet1(states, actions_tilde_theta), self.qnet2(states, actions_tilde_theta)
                 )
 
-                actor_loss = ((self.alpha * log_actions_values) - actions_values).mean()
+                #compute the loss
+                actor_loss = ((self.alpha * log_actions_tilde_theta_values) - actions_values).mean()
+
+                # store the loss
                 self.actor_loss_value = actor_loss.item()
 
+                # compute gradient ascent because the sing in actor_loss has been inrveted
                 self.actor_optimizer.zero_grad()
                 actor_loss.backward()
                 self.actor_optimizer.step()
 
-            # update the target networks
+            # update the target networks with polyak average
             if global_step % self.target_network_frequency == 0:
                 for param, target_param in zip(
                     self.qnet1.parameters(),
