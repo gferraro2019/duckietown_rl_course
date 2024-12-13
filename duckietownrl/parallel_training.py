@@ -13,7 +13,11 @@ from pyglet.window import key  # do not remove, otherwhise render issue
 
 
 from duckietownrl.gym_duckietown.envs import DuckietownEnv
-from duckietownrl.utils.utils import ReplayBuffer, load_replay_buffer, parse_arguments_from_ini
+from duckietownrl.utils.utils import (
+    ReplayBuffer,
+    load_replay_buffer,
+    parse_arguments_from_ini,
+)
 from duckietownrl.utils.wrappers import (
     Wrapper_BW,
     Wrapper_NormalizeImage,
@@ -39,13 +43,15 @@ wandb.init(
     },
 )
 
+print(__file__)
+import os.path as op
 
-file_config_path="config.ini"
+file_config_path = op.join(__file__[: -len("parallel_training.py")], "config.ini")
 args = parse_arguments_from_ini(file_config_path)
 
 yellow_mask = args["yellow_mask"]
 n_frames = args["n_frames"]
-n_chans = args["n_chans  # 1 for B/W images 3 for RGBs"]
+n_chans = args["n_chans"]  # 1 for B/W images 3 for RGBs
 n_envs = args["n_envs"]
 resize_shape = (args["width_frame"], args["height_frame"])  # (width,height)"]
 envs = []
@@ -57,7 +63,7 @@ for i in range(n_envs):
         distortion=args["distortion"],
         domain_rand=args["domain_rand"],
         max_steps=args["max_steps"],
-        seed=args["seed + k"],
+        seed=args["seed"] + k,
         window_width=args["width_preview"],
         window_height=args["height_preview"],
         camera_width=resize_shape[0],

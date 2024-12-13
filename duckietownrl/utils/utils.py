@@ -137,13 +137,12 @@ class ReplayBuffer:
     def sample(self, sample_capacity=None, device="cpu"):
         if self.can_sample():
             if sample_capacity:
-                idx =np.random.randint(0, len(self), sample_capacity)
+                idx = np.random.randint(0, len(self), sample_capacity)
 
             else:
-                idx =np.random.randint(0, len(self), self.batch_size)
-                
+                idx = np.random.randint(0, len(self), self.batch_size)
+
             self.indices[:] = idx
-            
 
             rewards = self.rewards[self.indices].to(device)
 
@@ -244,30 +243,37 @@ def saturate_replay_buffer(replay_buffer):
 
 import configparser
 
+
 def parse_arguments_from_ini(file_path):
     config = configparser.ConfigParser()
-    config.read(file_path)
+    config.read_file(open(file_path))
 
     arguments = {}
 
-    for key, value in config['general'].items():
-        print("Parsing the key: ",key)
-        if value.lower() in ['none',"null"]:
-            value =  None
-        elif value.lower() in ["True",'true', 'yes', '1', 'on']:
-            value = True
-        elif value.lower() in ["False",'false', 'no', '0', 'off']:
-            value = False
-        elif "." in value:
-            value = float(value)
-        elif "/" in value:
-            pass
-        else:
-            value=int(value)
-            
-        arguments[key]=value
-    
+    for section, cfg in config.items():
+        for key, value in config[section].items():
+            print("Parsing the key: ", key)
+            if value.lower() in ["none", "null"]:
+                value = None
+            elif value.lower() == "true":
+                value = True
+            elif value.lower() == "false":
+                value = False
+            elif "/" in value:
+                pass
+            elif "." in value:
+                value = float(value)
+            else:
+                try:
+                    value = int(value)
+                except:
+                    # is a string
+                    pass
+
+            arguments[key] = value
+
     return arguments
+
 
 """
 # Simple replay buffer
