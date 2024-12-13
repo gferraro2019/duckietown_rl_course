@@ -1801,28 +1801,31 @@ class Simulator(gym.Env):
             action_based_on_yellow,
         ) = self.process_image(self.img_array)
 
-        rw_yellow = -100
-        rw_white = -100
+        rw_yellow = 0
+        rw_white = 0
 
-        print(action_fased_on_white)
+        #print(action_fased_on_white)
 
         # if the yellow baricenter is present in the mask
         if distance_from_yellow != -np.inf:
             rw_yellow = distance_from_yellow
 
         # if the yellow baricenter is not in the mask
-
         if distance_from_white != -np.inf:
             rw_white = distance_from_white
 
-        if speed > 0.1:
-
-            reward = rw_yellow + rw_white  # - abs(self.action[0] - self.action[1]) * 50
-
-        else:
-            reward = -300
-
+        
+        reward = rw_yellow*3 +rw_white*3+ rw_yellow * rw_white  - abs(self.action[0] - self.action[1]) * 100 + speed*2000
+        
         return reward
+        
+        
+        # if speed >= 0:
+        #     reward = +10 * speed * lp.dot_dir + -100 * np.abs(lp.dist)
+        # else:
+        #     reward = speed * 100
+
+        # return reward
 
     # def compute_reward(self, pos, angle, speed):
     #     rw_4_y = 0
@@ -2226,7 +2229,8 @@ class Simulator(gym.Env):
             msg = ""
             done_code = "in-progress"
 
-        reward /= np.abs(self.reward_invalid_pose)
+        #reward /= np.abs(self.reward_invalid_pose)
+        reward = np.tanh(reward/326)
         return DoneRewardInfo(
             done=done, done_why=msg, reward=reward, done_code=done_code
         )
