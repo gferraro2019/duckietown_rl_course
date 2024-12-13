@@ -83,6 +83,8 @@ parser.add_argument("--tau", default=0.005, type=float)
 parser.add_argument("--reward_invalid_pose", default=-300, type=int)
 parser.add_argument("--alpha", default=0.20, type=float)
 parser.add_argument("--collect_random_steps", default=3000, type=int)
+parser.add_argument("--actor_lr", default=0.001, type=float)
+parser.add_argument("--critic_lr", default=0.001, type=float)
 parser.add_argument("--path", default="/media/g.ferraro/DONNEES", type=str)
 
 
@@ -162,7 +164,8 @@ agent = SAC(
     envs[0].action_space.shape[0],
     replay_buffer=replay_buffer,
     device=device,
-    actor_lr=0.001,
+    actor_lr=args.actor_lr,
+    critic_lr=args.critic_lr,
     tau=args.tau,
     alpha=args.alpha,
 )
