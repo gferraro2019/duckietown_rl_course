@@ -40,7 +40,7 @@ class SAC:
 
         self.action_bounds = action_bounds
         self.reward_scale = reward_scale
-        self.memory = replay_buffer
+        self.replay_buffer = replay_buffer
         self.target_network_frequency = target_network_frequency
         self.policy_frequency = policy_frequency
         self.tau = tau
@@ -83,38 +83,40 @@ class SAC:
         done = torch.Tensor([done]).to("cpu")
         action = torch.Tensor([action]).to("cpu")
         next_state = from_numpy(next_state).float().to("cpu")
-        self.memory.add(state, reward, done, action, next_state)
+        self.replay_buffer.add(state, reward, done, action, next_state)
 
     def train(self, global_step, device):
-        if not self.memory.can_sample():
+        if not self.replay_buffer.can_sample():
             return 0, 0, 0
         else:
             print("training...")
             # take a batch
-            states, actions, rewards, next_states, dones = self.memory.sample(
+            states, actions, rewards, next_states, dones = self.replay_buffer.sample(
                 device=device
             )
-            
+            print(len(states))
+
             # compute a' (target action) and its probs for s'
-            target_actions, target_actions_log_probs,entropy = self.policy_network.get_action(
-                next_states
+            target_actions, target_actions_log_probs, entropy = (
+                self.policy_network.get_action(next_states)
             )
-            
-            # compute q-values from target networks for s',a'  
+
+            # compute q-values from target networks for s',a'
             next_action_values = torch.min(
                 self.qnet1_target(next_states, target_actions),
                 self.qnet2_target(next_states, target_actions),
             )
 
             # compute target
-            expected_action_values = rewards.unsqueeze(-1) + self.gamma * torch.logical_not(dones.unsqueeze(-1))* (
+            expected_action_values = rewards.unsqueeze(
+                -1
+            ) + self.gamma * torch.logical_not(dones.unsqueeze(-1)) * (
                 next_action_values - self.alpha * target_actions_log_probs
             )
 
             # compute action values for a and s
             action_values1 = self.qnet1(states, actions)
             action_values2 = self.qnet2(states, actions)
-
 
             # compute the loss with the target
             action_values1_loss = self.q_value_loss(
@@ -123,10 +125,10 @@ class SAC:
             action_values2_loss = self.q_value_loss(
                 action_values2, expected_action_values
             )
-            
+
             # sum the losses
             q_loss = action_values1_loss + action_values2_loss
-            
+
             # store loss
             self.q_loss_value = q_loss.item()
 
@@ -138,15 +140,20 @@ class SAC:
             if global_step % self.policy_frequency == 0:
 
                 # compute a_tilde_theta
-                actions_tilde_theta, log_actions_tilde_theta_values, entropy = self.policy_network.get_action(states)
+                actions_tilde_theta, log_actions_tilde_theta_values, entropy = (
+                    self.policy_network.get_action(states)
+                )
 
                 # take the min action values
                 actions_values = torch.min(
-                    self.qnet1(states, actions_tilde_theta), self.qnet2(states, actions_tilde_theta)
+                    self.qnet1(states, actions_tilde_theta),
+                    self.qnet2(states, actions_tilde_theta),
                 )
 
-                #compute the loss
-                actor_loss = ((self.alpha * log_actions_tilde_theta_values) - actions_values).mean()
+                # compute the loss
+                actor_loss = (
+                    (self.alpha * log_actions_tilde_theta_values) - actions_values
+                ).mean()
 
                 # store the loss
                 self.actor_loss_value = actor_loss.item()
@@ -173,10 +180,10 @@ class SAC:
                         self.tau * param.data + (1 - self.tau) * target_param.data
                     )
         return entropy
-    
+
     def select_action(self, states):
         action, _, entropy = self.policy_network.get_action(states)
-        return np.array(action.detach().cpu().tolist()),entropy
+        return np.array(action.detach().cpu().tolist()), entropy
 
     @staticmethod
     def soft_update_target_network(local_network, target_network, tau=0.005):
