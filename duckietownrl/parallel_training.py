@@ -214,25 +214,41 @@ while True:
     )
     if has_changed:
 
-        agent.replay_buffer.batch_size = args["batch_size"]
+        if agent.replay_buffer.batch_size != args["batch_size"]:
+            agent.replay_buffer.change_bacth_size(args["batch_size"])
+            agent.replay_buffer.batch_size = args["batch_size"]
+            print(f"new batch_size {args['batch_size']}")
+
         optimizer = agent.actor_optimizer
-        for param_group in optimizer.param_groups:
-            # Set new learning rate
-            param_group["lr"] = args["actor_lr"]
-        agent.actor_lr = args["actor_lr"]
+        if agent.actor_lr != args["actor_lr"]:
+            for param_group in optimizer.param_groups:
+                # Set new learning rate
+                param_group["lr"] = args["actor_lr"]
+            agent.actor_lr = args["actor_lr"]
+            print(f"new actor_lr {args['actor_lr']}")
 
         optimizer = agent.q_optimizer
-        for param_group in optimizer.param_groups:
-            # Set new learning rate
-            param_group["lr"] = args["critic_lr"]
-        agent.critic_lr = args["critic_lr"]
+        if agent.critic_lr != args["critic_lr"]:
+            for param_group in optimizer.param_groups:
+                # Set new learning rate
+                param_group["lr"] = args["critic_lr"]
+            agent.critic_lr = args["critic_lr"]
+            print(f"new critic_lr {args['critic_lr']}")
 
-        agent.tau = args["tau"]
-        agent.alpha = args["alpha"]
-        collect_random_timesteps = args["collect_random_steps"]
-        save_on_episodes = args["save_on_episode"]
+        if agent.tau != args["tau"]:
+            agent.tau = args["tau"]
+            print(f"new tau {args['tau']}")
 
-        envs[0].close()
-        del envs[0].window
-        envs[0].window = None
+        if agent.alpha != args["alpha"]:
+            agent.alpha = args["alpha"]
+            print(f"new alpha {args['alpha']}")
+
+        if collect_random_timesteps != args["collect_random_steps"]:
+            collect_random_timesteps = args["collect_random_steps"]
+            print(f"new collect_random_steps {args['collect_random_steps']}")
+
+        if save_on_episodes != args["save_on_episode"]:
+            save_on_episodes = args["save_on_episode"]
+            print(f"new save_on_episode {args['save_on_episode']}")
+
     update(dt)
