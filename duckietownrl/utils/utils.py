@@ -242,6 +242,71 @@ def saturate_replay_buffer(replay_buffer):
 
 
 import configparser
+import time
+
+from duckietownrl.gym_duckietown.envs import DuckietownEnv
+from duckietownrl.utils.wrappers import (
+    Wrapper_BW,
+    Wrapper_NormalizeImage,
+    Wrapper_Resize,
+    Wrapper_StackObservation,
+    Wrapper_YellowWhiteMask,
+)
+
+
+def add_environment(envs, args, k):
+    n_chans = args["n_chans"]  # 1 for B/W images 3 for RGBs
+    yellow_mask = args["yellow_mask"]
+
+    print(f"creating env N.{len(envs)+1}...")
+    env = DuckietownEnv(
+        map_name=args["map_name"],
+        distortion=args["distortion"],
+        domain_rand=args["domain_rand"],
+        max_steps=args["max_steps"],
+        seed=args["seed"] + k,
+        window_width=args["width_preview"],
+        window_height=args["height_preview"],
+        camera_width=args["width_frame"],
+        camera_height=args["height_frame"],
+        reward_invalid_pose=args["reward_invalid_pose"],
+        # user_tile_start=(2, 0),
+        # start_pose=(0.34220727, 0, 0.58371305),
+        # start_angle=np.pi / 2,
+    )
+    k += 1
+    # wrapping the environment
+    env = Wrapper_StackObservation(env, args["n_frames"], n_chans=n_chans)
+    if n_chans == 1:
+        env.append_wrapper(Wrapper_BW(env))
+    env.append_wrapper(Wrapper_NormalizeImage(env))
+
+    if yellow_mask:
+        return_mask = args["return_masked_obs"]
+        env.append_wrapper(Wrapper_YellowWhiteMask(env, return_mask))
+        if return_mask is False:
+            n_chans += 3
+            env.n_chans += 3
+
+    env.reset()
+    env.render(mode="rgb_array")
+    envs.append(env)
+
+
+def read_file_if_modified(args, file_path, last_mod_time):
+    # Get the current modification time of the file
+    current_mod_time = os.path.getmtime(file_path)
+
+    # If the file has been modified since the last read
+    if current_mod_time != last_mod_time:
+        with open(file_path, "r") as file:
+            args = parse_arguments_from_ini(file_path)
+
+        print("modifications in config.ini ")
+        # Update the last modification time
+        return current_mod_time, args, True
+
+    return last_mod_time, args, False
 
 
 def parse_arguments_from_ini(file_path):

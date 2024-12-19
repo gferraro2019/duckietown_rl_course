@@ -12,23 +12,20 @@ import pyglet
 from pyglet.window import key  # do not remove, otherwhise render issue
 
 
-from duckietownrl.gym_duckietown.envs import DuckietownEnv
 from duckietownrl.utils.utils import (
     ReplayBuffer,
     load_replay_buffer,
     parse_arguments_from_ini,
+    read_file_if_modified,
+    add_environment,
 )
-from duckietownrl.utils.wrappers import (
-    Wrapper_BW,
-    Wrapper_NormalizeImage,
-    Wrapper_Resize,
-    Wrapper_StackObservation,
-    Wrapper_YellowWhiteMask,
-)
+
 
 from duckietownrl.algorithms.sac_new_2dconv import SAC
 
 import wandb
+import os.path as op
+
 
 # start a new wandb run to track this script
 wandb.init(
@@ -43,13 +40,12 @@ wandb.init(
     },
 )
 
-print(__file__)
-import os.path as op
 
 file_config_path = op.join(__file__[: -len("parallel_training.py")], "config.ini")
 args = parse_arguments_from_ini(file_config_path)
+last_mod_time = os.path.getmtime(file_config_path)
 
-yellow_mask = args["yellow_mask"]
+
 n_frames = args["n_frames"]
 n_chans = args["n_chans"]  # 1 for B/W images 3 for RGBs
 n_envs = args["n_envs"]
@@ -57,46 +53,14 @@ resize_shape = (args["width_frame"], args["height_frame"])  # (width,height)"]
 envs = []
 k = 0
 for i in range(n_envs):
-    print(f"creating env N.{i}...")
-    env = DuckietownEnv(
-        map_name=args["map_name"],
-        distortion=args["distortion"],
-        domain_rand=args["domain_rand"],
-        max_steps=args["max_steps"],
-        seed=args["seed"] + k,
-        window_width=args["width_preview"],
-        window_height=args["height_preview"],
-        camera_width=resize_shape[0],
-        camera_height=resize_shape[1],
-        reward_invalid_pose=args["reward_invalid_pose"],
-        # user_tile_start=(2, 0),
-        # start_pose=(0.34220727, 0, 0.58371305),
-        # start_angle=np.pi / 2,
-    )
+    add_environment(envs, args, k)
     k += 1
-    # wrapping the environment
-    env = Wrapper_StackObservation(env, n_frames, n_chans=n_chans)
-    if n_chans == 1:
-        env.append_wrapper(Wrapper_BW(env))
-    env.append_wrapper(Wrapper_NormalizeImage(env))
-
-    if yellow_mask:
-        return_mask = args["return_masked_obs"]
-        env.append_wrapper(Wrapper_YellowWhiteMask(env, return_mask))
-        if return_mask is False:
-            n_chans += 3
-            env.n_chans += 3
-
-    env.reset()
-    env.render(mode="rgb_array")
-    envs.append(env)
-
 
 device = "cuda"
 
 # assemble first obervation
 l_obs = []
-obs, _, _, _ = env.step(np.array([0, 0], dtype=np.float32))
+obs, _, _, _ = envs[0].step(np.array([0, 0], dtype=np.float32))
 
 for _ in envs:
     l_obs.append(np.asarray(obs))
@@ -245,4 +209,30 @@ def update(dt):
 dt = 0.001
 t = time.time()
 while True:
+    last_mod_time, args, has_changed = read_file_if_modified(
+        args, file_config_path, last_mod_time
+    )
+    if has_changed:
+
+        agent.replay_buffer.batch_size = args["batch_size"]
+        optimizer = agent.actor_optimizer
+        for param_group in optimizer.param_groups:
+            # Set new learning rate
+            param_group["lr"] = args["actor_lr"]
+        agent.actor_lr = args["actor_lr"]
+
+        optimizer = agent.q_optimizer
+        for param_group in optimizer.param_groups:
+            # Set new learning rate
+            param_group["lr"] = args["critic_lr"]
+        agent.critic_lr = args["critic_lr"]
+
+        agent.tau = args["tau"]
+        agent.alpha = args["alpha"]
+        collect_random_timesteps = args["collect_random_steps"]
+        save_on_episodes = args["save_on_episode"]
+
+        envs[0].close()
+        del envs[0].window
+        envs[0].window = None
     update(dt)
