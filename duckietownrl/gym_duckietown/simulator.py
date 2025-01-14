@@ -17,14 +17,14 @@ from typing import Any, cast, Dict, List, NewType, Optional, Sequence, Tuple, Un
 
 import geometry
 import geometry as g
-import gym
+import gymnasium as gym
 import math
 import numpy as np
 import pyglet
 import yaml
 from geometry import SE2value
-from gym import spaces
-from gym.utils import seeding
+from gymnasium import spaces
+from gymnasium.utils import seeding
 from numpy.random.mtrand import RandomState
 from pyglet import gl, image, window
 
@@ -1881,8 +1881,8 @@ class Simulator(gym.Env):
         height, width, _ = image.shape
         mask_height = height // 2  # Top third of the image is blacked out
         image[mask_height:, :] = 0  # Set the top third to black (0)
-        cv2.imshow("Clipped Image", image)
-        cv2.waitKey(1)
+        # cv2.imshow("Clipped Image", image)
+        # cv2.waitKey(1)
 
         # Step 2: Convert the image to HSV color space
         hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
@@ -1978,8 +1978,8 @@ class Simulator(gym.Env):
         cv2.circle(result_image, (ref_x, ref_y), 2, (255, 0, 0), -1)
 
         # Show the processed image
-        cv2.imshow("Processed Image", result_image)
-        cv2.waitKey(1)
+        # cv2.imshow("Processed Image", result_image)
+        # cv2.waitKey(1)
 
         # Step 9: Determine the action based on the white centroid's position
         action_according_white = None

@@ -2,6 +2,10 @@ LICENSE
 README.md
 setup.py
 duckietownrl/__init__.py
+duckietownrl/evaluate.py
+duckietownrl/evaluate_3dconv.py
+duckietownrl/parallel_training.py
+duckietownrl/parallel_training_imitation_learning.py
 duckietownrl/train.py
 duckietownrl.egg-info/PKG-INFO
 duckietownrl.egg-info/SOURCES.txt
@@ -9,6 +13,15 @@ duckietownrl.egg-info/dependency_links.txt
 duckietownrl.egg-info/top_level.txt
 duckietownrl/algorithms/__init__.py
 duckietownrl/algorithms/ddpg.py
+duckietownrl/algorithms/model.py
+duckietownrl/algorithms/model_3dconv.py
+duckietownrl/algorithms/sac.py
+duckietownrl/algorithms/sac_3dconv.py
+duckietownrl/algorithms/sac_3dconv_cleanrl.py
+duckietownrl/algorithms/sac_cleanrl.py
+duckietownrl/algorithms/sac_new_2dconv.py
+duckietownrl/algorithms/sac_new_3dconv.py
+duckietownrl/algorithms/sac_old.py
 duckietownrl/gym_duckietown/__init__.py
 duckietownrl/gym_duckietown/check_hw.py
 duckietownrl/gym_duckietown/collision.py
@@ -24,6 +37,7 @@ duckietownrl/gym_duckietown/utils.py
 duckietownrl/gym_duckietown/wrappers.py
 duckietownrl/gym_duckietown/envs/__init__.py
 duckietownrl/gym_duckietown/envs/duckiebot_env.py
+duckietownrl/gym_duckietown/envs/duckietown_discrete_env.py
 duckietownrl/gym_duckietown/envs/duckietown_env.py
 duckietownrl/gym_duckietown/envs/multimap_env.py
 duckietownrl/gym_duckietown/randomization/__init__.py
@@ -34,3 +48,6 @@ duckietownrl/utils/env.py
 duckietownrl/utils/utils.py
 duckietownrl/utils/wrappers.py
 tests/__init__.py
+tests/test_ctrl.py
+tests/test_discrete_env.py
+tests/test_env.py
