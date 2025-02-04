@@ -8,21 +8,21 @@ The Robots use ROS1.
 # Instruction for Robot's use
 1. Connect the router to the laptop with the USB and LAN cables.
 2. Turn on the robot.
-3. After the wifi dongle start blinking, check if the robot is visible:
+3. After the wifi dongle start blinking, check if the robot is visible:<br>
     `dts fleet discover`
-4. To create an ssh conncection with a robot:
-    `ssh duckie@paperino.local`
+4. To create an ssh conncection with a robot:<br>
+    `ssh duckie@paperino.local` or `ssh duckie@gastone.local` <br>
     `pwd: quackquack`
-5. To check the robot's status:
+5. To check the robot's status:<br>
     http://paperino.local or http://gastone.local
 
 
 # Let's pilot the robot manually
-`dts duckiebot keyboard_control paperino`
+`dts duckiebot keyboard_control paperino`<br>
 `dts duckiebot keyboard_control gastone`
 
-# To control the LDEs manually
-`dts duckiebot led_control paperino`
+# To control the LEDs manually
+`dts duckiebot led_control paperino`<br>
 `dts duckiebot led_control gastone`
 
 # To create a DTProject, choose a template on github and follow the instructions:
