@@ -1,38 +1,30 @@
-## DUCKIETOWNRL:
-A Reinforcement Learning Course with DuckieTown.
+# Welcome to the DuckieTown Robots page
+First of all, DuckieTown has its own shell that you can invoke with the command dts.
 
-## INSTALLATION:
+We have 2 robots whose usernames are: paperino, and gastone.
 
-### 0. Create the conda environment:
-`conda env create -f environment.yaml`
+The Robots use ROS1.
 
-### 1. Activate the new conda environment:
-`conda activate duckietownrl`
+# Instruction for RObot's use
+1. connect the router
+2. turn on the robot
+3. after the wifi dongle start blinking, check if the robot is visible:
+    `dts fleet discover`
+4. to create an ssh conncection with a robot:
+    `ssh duckie@paperino.local`
+    `pwd: quackquack`
+5. to check the robot status:
+    http://paperino.local or http://gastone.local
 
-## UNINSTALLATION:
 
-### To remove the conda environment:
-`conda remove -n duckietownrl --all`
+# Let's pilot the robot manually
+`dts duckiebot keyboard_control paperino`
+`dts duckiebot keyboard_control gastone`
 
-## SIMULATOR:
-### For playing with the keyboard:
-`./manual_control.py`
+# To control the LDEs manually
+`dts duckiebot led_control paperino`
+`dts duckiebot led_control gastone`
 
-### For playing with the joystick:
-`./joystick_control.py`
-
-## TRAINING A MODEL WITH SAC:
-The following script can run several environments in parallel and collect experience in the same Replay Buffer
-
-### For a standard version:
-`python duckietownrl/parallel_training.py`
-
-### For imitation learning with the joystick:
-Press the j key to activate and deactivate the joystick control. By default, the joystick is activated, and you have to move with it to collect a new experience; otherwise, it returns, and no steps are done. Once you finish manually controlling, press the j key to let the agent train independently.
-
-`python duckietownrl/parallel_training_imitation_learning.py`
-
-## TO EVALUATE A MODEL:
-Remember to specify the path for your model in the script.
-
-`python duckietownrl/evaluate.py`
+# To create a DTProject, choose a template on github and follow the instructions:
+    https://docs.duckietown.com/daffy/devmanual-software/beginner/dtproject/templates.html#project-templates     
+ 
