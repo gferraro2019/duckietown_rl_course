@@ -5,15 +5,15 @@ We have 2 robots whose usernames are: paperino, and gastone.
 
 The Robots use ROS1.
 
-# Instruction for RObot's use
-1. connect the router
-2. turn on the robot
-3. after the wifi dongle start blinking, check if the robot is visible:
+# Instruction for Robot's use
+1. Connect the router to the laptop with the USB and LAN cables.
+2. Turn on the robot.
+3. After the wifi dongle start blinking, check if the robot is visible:
     `dts fleet discover`
-4. to create an ssh conncection with a robot:
+4. To create an ssh conncection with a robot:
     `ssh duckie@paperino.local`
     `pwd: quackquack`
-5. to check the robot status:
+5. To check the robot's status:
     http://paperino.local or http://gastone.local
 
 
