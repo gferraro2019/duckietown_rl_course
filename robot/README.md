@@ -1,5 +1,5 @@
 # Welcome to the DuckieTown Robots page
-First of all, DuckieTown has its own shell that you can invoke with the command dts.
+First of all, DuckieTown has its own shell that you can invoke with the command `dts`.
 
 We have 2 robots whose usernames are: paperino, and gastone.
 
