@@ -28,3 +28,12 @@ The Robots use ROS1.
 # To create a DTProject, choose a template on github and follow the instructions:
     https://docs.duckietown.com/daffy/devmanual-software/beginner/dtproject/templates.html#project-templates     
  
+# To visualize the Topic list
+1. [Optional] if you use the ros:noetic Docker image, start the container:
+`docker run --network host -it ros:noetic`
+2. run the following command wherever you have ros1 intalled:
+`export ROS_MASTER_URI=http://192.168.1.173:11311`
+
+# to connect with ros contained on the duckie bot:
+1. `export IP_LOCAL= the ip of the local machine`
+2. `docker run -it --rm --network host --add-host paperino.local:192.168.1.10 -e ROS_MASTER_URI=http://paperino.local:11311 -e ROS_HOSTNAME=$IP_LOCAL duckietown/dt-ros-commons:daffy-amd64 bash`
