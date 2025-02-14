@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.2
 Name: duckietownrl
 Version: 1.0.0
 Summary: A python library for RL with DuckieTown
@@ -7,3 +7,8 @@ Author: Giuseppe Ferraro
 Author-email: giuseppe.ferraro@isae-supaero.fr
 Requires-Python: >=3.8, <3.9
 License-File: LICENSE
+Dynamic: author
+Dynamic: author-email
+Dynamic: home-page
+Dynamic: requires-python
+Dynamic: summary
