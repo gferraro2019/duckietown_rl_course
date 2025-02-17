@@ -12,8 +12,8 @@ from std_msgs.msg import Header
 from cv_bridge import CvBridge
 import keyboard
 import time
-from .duckie_bot_discrete import DuckieBotDiscrete
-from .api import DuckieBotAPI
+from environments.real_world_environment.duckie_bot_discrete import DuckieBotDiscrete
+from environments.real_world_environment.api import DuckieBotAPI
 import gymnasium
 
 
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     # env = DuckieBotDiscrete(robot_name="paperino", fixed_linear_velocity=0.3, fixed_angular_velocity=0.1,
     #                         action_duration=0.3, stochasticity=0.1)
 
-    env = gymnasium.make("DuckieBotDiscrete-V1")
+    env = gymnasium.make("DuckieBotDiscrete-v1")
 
     # Reset the environment and get the initial observation
     observation = env.reset()

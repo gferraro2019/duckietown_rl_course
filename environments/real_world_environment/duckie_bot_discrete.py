@@ -12,10 +12,10 @@ from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge
 from std_msgs.msg import Header
 from cv_bridge import CvBridge
-from .api import DuckiebotAPI
+from environments.real_world_environment.api import DuckieBotAPI
 
 
-class DuckieBotDiscrete(DuckiebotAPI):
+class DuckieBotDiscrete(DuckieBotAPI):
 
     """
     DuckieBot environment with discrete actions.

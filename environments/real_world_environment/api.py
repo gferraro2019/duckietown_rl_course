@@ -18,7 +18,7 @@ from std_msgs.msg import Header
 from cv_bridge import CvBridge
 
 
-class DuckiebotAPI(object):
+class DuckieBotAPI(object):
     """
     API between the code and the duckiebot ros topics.
     This class is an interface that defines usefull functions, used by the discrete actions and continuous
