@@ -2,7 +2,7 @@ from gymnasium.envs.registration import register
 
 register(
     id="DuckieBotDiscrete-v1",  # Unique name
-    entry_point="robot.real_world_environment.duckie_bot_discrete:DuckieBotDiscrete",
+    entry_point="environments.real_world_environment.duckie_bot_discrete:DuckieBotDiscrete",
     kwargs={
         "robot_name": "paperino",
         "fixed_linear_velocity": 0.3,
