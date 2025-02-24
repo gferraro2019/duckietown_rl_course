@@ -6,54 +6,79 @@ import pyarrow as pa
 from datetime import datetime
 
 # Import the DuckieBot environment
-from environments.real_world_environment import RealWorldEnvironment
+from environments.real_world_environment import DuckieBotDiscrete
 
-env = gym.make('DuckieBotDiscrete-v1', render_mode="human")
+env = DuckieBotDiscrete()
 obs, info = env.reset()
 
 data = []  # To store interaction samples
 
+
 key_action_map = {
-    keyboard.Key.up: 0,  # Forward
-    keyboard.Key.down: 1,  # Backward
-    keyboard.Key.left: 2,  # Turn left
-    keyboard.Key.right: 3  # Turn right
+    keyboard.Key.up: 0,         # Forward
+    keyboard.Key.down: 1,       # Backward
+    keyboard.Key.left: 2,       # Turn left
+    keyboard.Key.right: 3,      # Turn right
+    keyboard.Key.space: 4,      # Stop (4
+    keyboard.Key.esc: 4         # Stop
 }
 
-current_action = 4  # Default to no action
+current_action = None  # Default to no action
 
 
 def on_press(key):
     global current_action
     if key in key_action_map:
         current_action = key_action_map[key]
-    elif key == keyboard.Key.esc:
-        return False  # Stop listener
-
 
 def on_release(key):
     global current_action
     if key in key_action_map:
-        current_action = 4  # Reset to no action
+        current_action = None  # Reset to no action
 
 
-print("Use arrow keys to control the DuckieBot. Press 'Esc' to quit.")
-
+print("Use arrow keys to control the DuckieBot. Press 'Space' or Esc to quit.")
+robot_is_moving = False
 listener = keyboard.Listener(on_press=on_press, on_release=on_release)
 listener.start()
 
+last_obs = None
 try:
     while True:
-        if current_action == 4:
+        if current_action is None:
+            if robot_is_moving:
+                env.set_velocity_raw()     # Stop the robot
+                robot_is_moving = False
             continue
+        else:
+            robot_is_moving = True
+            print()
+            print()
+            print()
+            print()
+            print()
+            print("ROBOT IS MOVING")
+            print()
+            print()
+            print()
+            print()
+            print()
+        if current_action == 4:
+            env.apply_action()      # Stop the robot
+            break
+
+        print("Current action: ", current_action)
+        last_obs = env.get_observation()
         next_obs, reward, terminated, truncated, info = env.step(current_action)
 
         # Store interaction sample
         data.append({
+            "last_obs": last_obs,
             "action": current_action,
             "reward": reward,
             "terminated": terminated,
             "truncated": truncated,
+            "next_obs": next_obs,
             "info": str(info)
         })
 
@@ -69,7 +94,10 @@ finally:
     if data:
         df = pd.DataFrame(data)
         table = pa.Table.from_pandas(df)
-        pq.write_table(table, "duckiebot_interactions.parquet")
+
+        timestamp = datetime.now().strftime("%d-%m-%Y_%Hh%Mm%Ss")   # Get current date and time in the desired format
+        filename = f"duckiebot_interactions_{timestamp}.parquet"    # Convert the date-time into a filename
+        pq.write_table(table, "duckiebot_interactions.parquet")     # Save the data
         print("Dataset saved as duckiebot_interactions.parquet")
     else:
         print("No interactions recorded.")

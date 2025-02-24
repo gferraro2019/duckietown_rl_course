@@ -11,3 +11,7 @@ register(
         "stochasticity": 0.1
     }
 )
+
+
+from .duckie_bot_discrete import DuckieBotDiscrete
+from .api import DuckieBotAPI
