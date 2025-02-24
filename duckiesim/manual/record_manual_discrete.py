@@ -10,7 +10,7 @@ from PIL import Image
 import argparse
 import sys
 import os
-import gym
+import gymnasium as gym
 import numpy as np
 import pandas as pd
 from pynput import keyboard
