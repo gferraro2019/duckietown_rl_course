@@ -158,9 +158,7 @@ def process_image(image):
         action_according_blue,
     )
 
-def compute_custom_reward(obs, 
-                          a
-                          ): 
+def compute_custom_reward(obs, a): 
         """ action : (vel_abs, vel_angle) """
         
         (   x_blue_center, y_blue_center,
