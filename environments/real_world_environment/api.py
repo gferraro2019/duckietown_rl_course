@@ -42,7 +42,7 @@ class DuckiebotAPI(object):
 
         # Init a node for this api
         #self.node = rospy.init_node('api_from_' + socket.gethostname(), anonymous=True)
-
+        self.nb_messages_received = 0
         print("  > Initializing node...")
         self.node = rospy.init_node('api', anonymous=True)
         print("  > Node initialized.")
@@ -72,7 +72,9 @@ class DuckiebotAPI(object):
         Returns: None
         """
         try:
-            self.last_observation = self._image_bridge.compressed_imgmsg_to_cv2(observation_message)
+            self.nb_messages_received += 1
+            # print(" > Received", self.nb_messages_received)
+            self.last_observation = self._image_bridge.compressed_imgmsg_to_cv2(observation_message)[150:]
         except Exception as e:
             rospy.logerr(f"Error processing image: {e}")
 
@@ -104,7 +106,6 @@ class DuckiebotAPI(object):
         self.set_velocity(linear_velocity=linear_velocity, angular_velocity=angular_velocity)  # Send the action
         time.sleep(self.action_duration)    # Let the action run for a fixed duration
         self.set_velocity()                 # Stop the robot at the end of the timer (default velocities are 0.0)
-        time.sleep(0.1)                     # Makes sure this action is done before sending a new one.
 
     def stop_robot(self):
         self.set_velocity(0.0, 0.0)

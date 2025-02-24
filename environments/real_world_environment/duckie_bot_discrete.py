@@ -51,9 +51,9 @@ class DuckieBotDiscrete(DuckiebotAPI):
         self.observation_space = Box(low=0, high=255, shape=(100, 200, 3), dtype=np.uint8)  # Images observation space
         self.action_space = Discrete(4)     # Action space with four possible actions (from 0 to 3 included)
 
-        self.fixed_linear_velocity: float = params.get("fixed_linear_velocity", 0.1)
-        self.fixed_angular_velocity: float = params.get("fixed_angular_velocity", 0.1)
-        self.action_duration: float = params.get("action_duration", 1.)
+        self.fixed_linear_velocity: float = params.get("fixed_linear_velocity", 0.25)
+        self.fixed_angular_velocity: float = params.get("fixed_angular_velocity", 0.12)
+        self.action_duration: float = params.get("action_duration", 0.3)
         self.stochasticity: float = params.get("stochasticity", 0.0)      # Probability to take a different action,
 
         print("  > Environment initialized.")
@@ -66,15 +66,16 @@ class DuckieBotDiscrete(DuckiebotAPI):
             available_actions = list(set(range(self.action_space.n)) - {int(action)})
             action = random.choice(available_actions)
 
-        print(f"Action chosen: {original_action} -> {action} (after stochasticity)")  # Debugging log
-
+        # print(f"Action chosen: {original_action} -> {action} (after stochasticity)")  # Debugging log
+        if isinstance(action, np.ndarray):
+            action = int(action)
         if action == self.Actions.FORWARD.value:
             self.apply_action(linear_velocity=self.fixed_linear_velocity)
-        if action == self.Actions.BACKWARD.value:
+        elif action == self.Actions.BACKWARD.value:
             self.apply_action(linear_velocity=-self.fixed_linear_velocity)
-        if action == self.Actions.LEFT.value:
+        elif action == self.Actions.LEFT.value:
             self.apply_action(angular_velocity=self.fixed_angular_velocity)
-        if action == self.Actions.RIGHT.value:
+        elif action == self.Actions.RIGHT.value:
             self.apply_action(angular_velocity=-self.fixed_angular_velocity)
 
         # Now the action is performed, return the observation
@@ -97,5 +98,5 @@ class DuckieBotDiscrete(DuckiebotAPI):
         print("    ########################################    ")
         input("Press any key to continue ...")
         time.sleep(0.2)
-        return self.get_observation()
+        return self.get_observation(), {}
 
