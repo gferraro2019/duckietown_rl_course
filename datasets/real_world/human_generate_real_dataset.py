@@ -1,3 +1,5 @@
+import pathlib
+
 import gymnasium as gym
 import pandas as pd
 from pynput import keyboard
@@ -52,17 +54,6 @@ try:
             continue
         else:
             robot_is_moving = True
-            print()
-            print()
-            print()
-            print()
-            print()
-            print("ROBOT IS MOVING")
-            print()
-            print()
-            print()
-            print()
-            print()
         if current_action == 4:
             env.apply_action()      # Stop the robot
             break
@@ -73,13 +64,11 @@ try:
 
         # Store interaction sample
         data.append({
-            "last_obs": last_obs,
-            "action": current_action,
-            "reward": reward,
-            "terminated": terminated,
-            "truncated": truncated,
-            "next_obs": next_obs,
-            "info": str(info)
+            "s": last_obs.flatten().tolist(),
+            "a": current_action,
+            "r": reward,
+            "d": terminated or truncated,
+            "next_s": next_obs.flatten().tolist()
         })
 
         if terminated or truncated:
@@ -96,8 +85,9 @@ finally:
         table = pa.Table.from_pandas(df)
 
         timestamp = datetime.now().strftime("%d-%m-%Y_%Hh%Mm%Ss")   # Get current date and time in the desired format
-        filename = f"duckiebot_interactions_{timestamp}.parquet"    # Convert the date-time into a filename
-        pq.write_table(table, "duckiebot_interactions.parquet")     # Save the data
-        print("Dataset saved as duckiebot_interactions.parquet")
+        current_dir = pathlib.Path(__file__).parent.absolute()
+        filename = f"{current_dir}/duckiebot_interactions_{timestamp}.parquet"    # Convert the date-time into a filename
+        df = pd.DataFrame(data)
+        df.to_parquet(filename, engine="pyarrow", index=False)
     else:
         print("No interactions recorded.")
