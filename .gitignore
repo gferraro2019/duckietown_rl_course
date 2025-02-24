@@ -1,0 +1,12 @@
+*.pyc
+*.pth
+*replay_buffer
+*.log
+*wandb/*
+*/wandb*
+*wandb/
+*runs/
+*dataset/
+*model/
+*__pycache__/
+*dataset_training/
