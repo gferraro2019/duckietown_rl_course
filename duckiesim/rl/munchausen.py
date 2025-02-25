@@ -57,7 +57,7 @@ class Args:
     """the id of the environment"""
     total_timesteps: int = 10000000
     """total timesteps of the experiments"""
-    learning_rate: float = 1e-4
+    learning_rate: float = 5e-4
     """the learning rate of the optimizer"""
     num_envs: int = 1
     """the number of parallel game environments"""
@@ -79,13 +79,13 @@ class Args:
     """the fraction of `total-timesteps` it takes from start-e to go end-e"""
     learning_starts: int = 10_000
     """timestep to start learning"""
-    train_frequency: int = 16
+    train_frequency: int = 4
     """the frequency of training"""
 
     # Munchausen specific arguments
-    tau_soft: float = 0.05 #0.03
+    tau_soft: float = 0.1 #0.03
     """the temperature parameter for the soft-max policy as well as entropy regularization"""
-    alpha: float = 0.75 # 0.9
+    alpha: float = 0.9 # 0.9
     """the ppo term weight"""
     l_0: float = -1.0
     """the lower bound of the weighted log probability"""
@@ -129,7 +129,7 @@ def make_env(env_id, seed, idx, capture_video, run_name):
 
     return thunk
 
-def load_dataset_to_buffer(file_path, replay_buffer, observation_space):
+def load_dataset_to_buffer(file_path, replay_buffer, observation_space, env_id):
     """Charge le dataset depuis un fichier et initialise le ReplayBuffer."""
     df = pd.read_parquet(file_path)
 
@@ -143,7 +143,7 @@ def load_dataset_to_buffer(file_path, replay_buffer, observation_space):
     next_s_data = next_s_data.reshape(len(next_s_data), *observation_space.shape)[:, None, :, :, :]
     
     # process reward function
-    s_data, a_data, r_data, d_data, next_s_data = process_dataset(s_data, a_data, r_data, d_data, next_s_data)
+    s_data, a_data, r_data, d_data, next_s_data = process_dataset(s_data, a_data, r_data, d_data, next_s_data, gym.make(env_id))
     
     replay_buffer.observations[:len(s_data)] = s_data
     replay_buffer.actions[:len(a_data)] = a_data
@@ -248,7 +248,7 @@ poetry run pip install "stable_baselines3==2.0.0a1" "gymnasium[atari,accept-rom-
     # Charge le dataset si l'argument file_dataset est défini
     if args.load_dataset:
         print(f"Chargement du dataset depuis : {args.file_dataset}")
-        rb = load_dataset_to_buffer(args.file_dataset, rb, envs.single_observation_space)
+        rb = load_dataset_to_buffer(args.file_dataset, rb, envs.single_observation_space, args.env_id)
         
         
     # MODEL PATH 

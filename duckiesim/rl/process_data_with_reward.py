@@ -21,12 +21,12 @@ class Args:
     """The environment id"""
     
     
-def process_dataset(s_data, a_data, r_data, d_data, next_s_data):
+def process_dataset(s_data, a_data, r_data, d_data, next_s_data, env):
     for i in tqdm(range(len(s_data))):
         obs = s_data[i, 0, : , : , -3:]
-        a = a_data[i]
+        a = a_data[i].item()
         d = d_data[i]
-        reward = compute_custom_reward(obs, a) if not d else r_data[i]
+        reward = compute_custom_reward(obs, env.unwrapped.actions[a]) if not d else r_data[i]
         r_data[i] = reward if not (d and reward<=-10.0) else REWARD_INVALID_POSE
     return s_data, a_data, r_data, d_data, next_s_data
     
@@ -46,9 +46,9 @@ if __name__ == "__main__":
 
     for i in tqdm(range(len(s_data))):
         obs = s_data[i, 0, : , : , -3:]
-        a = a_data[i]
+        a = a_data[i].item()
         d = d_data[i]
-        reward = compute_custom_reward(obs, a) if not d else r_data[i]
+        reward = compute_custom_reward(obs, env.unwrapped.actions[a]) if not d else r_data[i]
         r_data[i] = reward
         
     

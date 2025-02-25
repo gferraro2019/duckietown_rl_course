@@ -158,7 +158,9 @@ def process_image(image):
         action_according_blue,
     )
 
-def compute_custom_reward(obs, a): 
+def compute_custom_reward(obs, 
+                          a
+                          ): 
         """ action : (vel_abs, vel_angle) """
         
         (   x_blue_center, y_blue_center,
@@ -168,12 +170,16 @@ def compute_custom_reward(obs, a):
             action_fased_on_white,
             action_based_on_blue,
         ) = process_image(obs)
+        # IMAGE BASED
         r_blue = - 5.0
         if x_blue_center is not None:
             dist_blue = np.sqrt(x_blue_center ** 2 + y_blue_center ** 2)
             r_blue = -dist_blue/np.sqrt(2.0)
+        # ACTION (speed, angular_velocity) BASED
         speed_action = (a[0] * 25.0 if a[0] > 0.1 else -1.0)
+        # ANGULAR SPEED
+        angular_speed = a[1]**2 
+        # REWARDS
         r_blue = float(speed_action> 0.0)*r_blue
-        reward =  (r_blue + speed_action)/10.0
-        # reward = np.exp(r_blue + speed_action)/100.0
+        reward =  (r_blue + speed_action - 4.0*angular_speed)/10.0
         return reward
