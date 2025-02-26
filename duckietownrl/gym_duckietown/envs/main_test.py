@@ -12,8 +12,8 @@ from std_msgs.msg import Header
 from cv_bridge import CvBridge
 import keyboard
 import time
-from .duckie_bot_discrete import DuckieBotDiscrete
-from .api import DuckieBotAPI
+from duckietown_rl_course.duckietownrl.gym_duckietown.envs.duckie_bot_discrete import DuckieBotDiscrete
+from duckietownrl.gym_duckietown.api import DuckiebotAPI
 import gymnasium
 
 

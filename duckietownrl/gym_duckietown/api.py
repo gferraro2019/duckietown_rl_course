@@ -10,12 +10,7 @@ import random
 import socket
 import curses
 import numpy as np
-import rospy
-from duckietown_msgs.msg import WheelsCmdStamped
-from sensor_msgs.msg import CompressedImage
-from cv_bridge import CvBridge
-from std_msgs.msg import Header
-from cv_bridge import CvBridge
+
 
 
 class DuckiebotAPI(object):
@@ -26,6 +21,12 @@ class DuckiebotAPI(object):
     """
 
     def __init__(self, **params):
+        import rospy
+        from duckietown_msgs.msg import WheelsCmdStamped
+        from sensor_msgs.msg import CompressedImage
+        from cv_bridge import CvBridge
+        from std_msgs.msg import Header
+        from cv_bridge import CvBridge
         print()
         print("    ______________________________________________________    ")
         print()

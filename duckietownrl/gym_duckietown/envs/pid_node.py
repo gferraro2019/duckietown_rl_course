@@ -1,5 +1,8 @@
 import rospy
 import numpy as np
+import rospy
+from duckietown_msgs.msg import WheelsCmdStamped
+from duckietown_msgs.msg import Twist2DStamped
 
 # Définition des gains PID
 KP = 1.0  # gain proportionnel
@@ -23,12 +26,12 @@ class NoeudPID:
         self.derniere_vitesse_right = 0.0
 
         # Abonnement aux topics
-        self.sub_left_wheel_tick = rospy.Subscriber('left_wheel_tick', Int32, self.callback_left_wheel_tick)
-        self.sub_right_wheel_tick = rospy.Subscriber('right_wheel_tick', Int32, self.callback_right_wheel_tick)
-        self.sub_cmd_agent = rospy.Subscriber('cmd_agent', Vector3, self.callback_cmd_agent)
+        self.sub_left_wheel_tick = rospy.Subscriber('/paperino/left_wheel_encoder_node/tick', Twist2DStamped, self.callback_left_wheel_tick)
+        self.sub_right_wheel_tick = rospy.Subscriber('/paperino/right_wheel_encoder_node/tick', Twist2DStamped, self.callback_right_wheel_tick)
+        self.sub_cmd_agent = rospy.Subscriber('cmd_agent', WheelsCmdStamped, self.callback_cmd_agent)
 
         # Publication des commandes de vitesse
-        self.pub_cmd_moteur = rospy.Publisher('cmd_moteur', Vector3, queue_size=10)
+        self.pub_cmd_moteur = rospy.Publisher('/paperino/wheels_driver_node/wheels_cmd', WheelsCmdStamped, queue_size=10)
 
     def callback_left_wheel_tick(self, msg):
         self.left_wheel_tick = msg.data
@@ -61,7 +64,7 @@ class NoeudPID:
         cmd_right = KP * self.error_right + KI * self.integrale_right + KD * derivée_right
 
         # Publication de la commande de vitesse
-        self.pub_cmd_moteur.publish(Vector3(cmd_left, cmd_right, 0))
+        self.pub_cmd_moteur.publish(WheelsCmdStamped(header=None, vel_left=cmd_left, vel_right=cmd_right))
 
         # Mise à jour des valeurs précédentes
         self.derniere_vitesse_left = vitesse_left

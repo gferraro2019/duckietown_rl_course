@@ -79,11 +79,11 @@ class Args:
     """the fraction of `total-timesteps` it takes from start-e to go end-e"""
     learning_starts: int = 10_000
     """timestep to start learning"""
-    train_frequency: int = 4
+    train_frequency: int = 8
     """the frequency of training"""
 
     # Munchausen specific arguments
-    tau_soft: float = 0.1 #0.03
+    tau_soft: float = 0.2 #0.03
     """the temperature parameter for the soft-max policy as well as entropy regularization"""
     alpha: float = 0.9 # 0.9
     """the ppo term weight"""

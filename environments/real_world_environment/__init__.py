@@ -13,5 +13,5 @@ register(
 )
 
 
-from .duckie_bot_discrete import DuckieBotDiscrete
+from ...duckietownrl.gym_duckietown.envs.duckie_bot_discrete import DuckieBotDiscrete
 from .api import DuckieBotAPI

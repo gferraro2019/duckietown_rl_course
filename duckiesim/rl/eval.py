@@ -42,8 +42,8 @@ def evaluate_with_rendering(model_path, env_id, num_episodes=10, seed=42, tau_so
                 policy = torch.softmax(q_values / tau_soft, dim=-1)
                 # print('policy', policy)
                 # argmax
-                # action = torch.argmax(policy, dim=-1).item() 
-                action = torch.multinomial(policy, num_samples=1).item()
+                action = torch.argmax(policy, dim=-1).item() 
+                # action = torch.multinomial(policy, num_samples=1).item()
                 # print('action', action)
             img = env.render()
             cv2.imshow("Duckietown", img)
@@ -58,7 +58,7 @@ def evaluate_with_rendering(model_path, env_id, num_episodes=10, seed=42, tau_so
     env.close()
 
 if __name__ == "__main__":
-    model_path = "/home/p.le-tolguenec/Documents/duckietown_rl_course/duckiesim/rl/model/exp_3/munchausen_720610_811.5635433112941.pt"  # Adapter au chemin réel
+    model_path = "/home/p.le-tolguenec/Documents/duckietown_rl_course/model/exp_1/munchausen_130324_730.3910225501202.pt"  # Adapter au chemin réel
     env_id = "DuckietownDiscrete-v0"
 
     evaluate_with_rendering(model_path, env_id, num_episodes=20, seed=42, tau_soft=0.05)

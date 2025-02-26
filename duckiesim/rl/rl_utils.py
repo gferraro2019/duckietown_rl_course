@@ -5,7 +5,7 @@ import numpy as np
 
 
 
-def evaluate(agent, env_id, num_episodes=10, seed=42, tau = 0.03):
+def evaluate(agent, env_id, num_episodes=10, seed=0, tau = 0.03):
     """
     Évalue l'agent sur plusieurs trajectoires avec des graines différentes.
 

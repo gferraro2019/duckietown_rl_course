@@ -1,4 +1,5 @@
 from gymnasium.spaces import Discrete, Box
+import gymnasium as gym
 from enum import Enum
 import os
 import time
@@ -6,16 +7,10 @@ import random
 import socket
 import curses
 import numpy as np
-import rospy
-from duckietown_msgs.msg import WheelsCmdStamped
-from sensor_msgs.msg import CompressedImage
-from cv_bridge import CvBridge
-from std_msgs.msg import Header
-from cv_bridge import CvBridge
-from .api import DuckiebotAPI
+from duckietownrl.gym_duckietown.api import DuckiebotAPI
 
 
-class DuckieBotDiscrete(DuckiebotAPI):
+class DuckieBotDiscrete(gym.Env, DuckiebotAPI):
 
     """
     DuckieBot environment with discrete actions.
@@ -45,9 +40,9 @@ class DuckieBotDiscrete(DuckiebotAPI):
                 action actually taken is chosen uniformly among the remaining actions.
                 Default = 0.
         """
-
         print("  > Initializing environment... ")
-        super().__init__(**params)
+        DuckiebotAPI.__init__(self, **params)
+        gym.Env.__init__(self)
         self.observation_space = Box(low=0, high=255, shape=(100, 200, 3), dtype=np.uint8)  # Images observation space
         self.action_space = Discrete(4)     # Action space with four possible actions (from 0 to 3 included)
 
@@ -87,8 +82,13 @@ class DuckieBotDiscrete(DuckiebotAPI):
         print(" > Type:", type(observation))
         print(" > dtype:", observation.dtype)
         print(" > shape:", observation.shape)
+        reward = 0.0
+        done = False
+        trunc = False
+        info = {}
+        return observation, reward, done, trunc, info
 
-    def reset(self):
+    def reset(self, seed = 0, option = None):
         print("    ########################################    ")
         print("    ###      RESET FUNCTION CALLED.      ###    ")
         print("    ###  Pick up the robot and place it  ###    ")
