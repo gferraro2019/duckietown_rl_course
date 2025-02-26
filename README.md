@@ -43,8 +43,37 @@ Here is the planned schedule for the three days:
 |         | 15:00-17:00 |  Implementation \& Debbug        | Make it work  |       
 | Day 3   | 08:00-10:00 |  Implementation \& Debbug        | Make it work  |                 
 |         | 10:00-12:00 |  Implementation \& Debbug        | Make it work  |
-|         | 13:00-15:00 | Get ready for the competition                    | Get ready for the competition     |
-|         | 15:00-17:00 | Run on various circuits  + Feedback   | Evaluation            |
+|         | 13:00-15:00 | Competition                    | Win     |
+|         | 15:00-17:00 | Presentation   | Evaluation            |
+
+
+
+## RL Robot Project Evaluation Grid
+
+### Project Presentation and Implementation (15 points)
+
+The project presentation will be a concise demonstration of your work and approach. While slides are not required, you should prepare a well-structured verbal explanation of your methodology, technical choices, and results. Be ready to clearly articulate your reasoning, explain the challenges you encountered and how you overcame them, and demonstrate your understanding of the RL algorithms used. What matters most is the quality of your argumentation and your ability to critically analyze your own work, not the visual support.
+
+| Criterion | Insufficient | Acceptable | Good | Excellent |
+|---------|-------------------|-----------------|---------------------|-----------------|
+| **Clarity of approach** | Approach is confusing and difficult to follow | Approach is generally understandable but lacks structure | Approach is clear, logical and well-structured | Approach is perfectly articulated with exemplary logical progression |
+| **Justification of technical choices** | Choices are not or poorly justified | Choices are partially justified without in-depth analysis | Choices are well justified with relevant analysis | Choices are perfectly justified with thorough critical analysis and considered alternatives |
+| **Understanding of RL algorithms** | Superficial understanding of algorithms used | Good understanding of the basics of algorithms used | Strong mastery of algorithms with ability to explain | Deep mastery with critical analysis and understanding of nuances |
+| **Experimentation and analysis** | Few or no experiments | Some experiments without in-depth analysis | Relevant experiments with results analysis | Systematic experiments with comparative analyses and relevant conclusions |
+| **Simulator to real-world adaptation** | Major difficulties in simulator-to-real adaptation | Partial adaptation with limited adjustments | Good adaptation with relevant adjustments | Excellent adaptation with methodical and effective adjustment strategy |
+| **Code documentation** | Code poorly documented or not at all | Partially documented code | Well documented and organized code | Exemplary, perfectly documented and structured code |
+| **Problem solving** | Few problems identified and solved | Problems identified but limited solutions | Good identification and resolution of problems | Excellent ability to anticipate, identify and solve complex problems |
+
+### Competition (5 points)
+
+| Position | Score |
+|----------|---------------|
+| 1st place | 5 points |
+| 2nd place | 4 points |
+| 3rd place | 3.5 points |
+| 4th place | 3 points |
+| 5th place | 2.5 points |
+| 6th place and beyond | 2 points |
 
 
 ## INSTALLATION:

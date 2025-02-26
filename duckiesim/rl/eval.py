@@ -5,7 +5,7 @@ from munchausen import QNetwork
 import plotext as plt
 import cv2
 
-def evaluate_with_rendering(model_path, env_id, num_episodes=10, seed=42, tau_soft=1.0):
+def evaluate_with_rendering(model_path, env_id, num_episodes=10, seed=0, tau_soft=1.0):
     """
     Évalue le modèle sauvegardé avec rendu visuel, en utilisant une politique softmax.
 
@@ -58,7 +58,7 @@ def evaluate_with_rendering(model_path, env_id, num_episodes=10, seed=42, tau_so
     env.close()
 
 if __name__ == "__main__":
-    model_path = "/home/p.le-tolguenec/Documents/duckietown_rl_course/model/exp_1/munchausen_130324_730.3910225501202.pt"  # Adapter au chemin réel
+    model_path = "/home/p.le-tolguenec/Documents/duckietown_rl_course/model/exp_1/munchausen_400000_1611.264705538024.pt"  # Adapter au chemin réel
     env_id = "DuckietownDiscrete-v0"
 
     evaluate_with_rendering(model_path, env_id, num_episodes=20, seed=42, tau_soft=0.05)

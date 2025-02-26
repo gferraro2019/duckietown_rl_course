@@ -57,7 +57,7 @@ class Args:
     """the id of the environment"""
     total_timesteps: int = 10000000
     """total timesteps of the experiments"""
-    learning_rate: float = 5e-4
+    learning_rate: float = 2e-4
     """the learning rate of the optimizer"""
     num_envs: int = 1
     """the number of parallel game environments"""
@@ -83,10 +83,10 @@ class Args:
     """the frequency of training"""
 
     # Munchausen specific arguments
-    tau_soft: float = 0.2 #0.03
-    """the temperature parameter for the soft-max policy as well as entropy regularization"""
-    alpha: float = 0.9 # 0.9
-    """the ppo term weight"""
+    tau_soft: float = 0.4 #0.03
+    """the temperature parameter for the soft-max policy as well as entropy regularization : tau = lambda_kl + lambda_entropy"""
+    alpha: float = 0.5 # 0.9
+    """the ppo term weight : alpha = lambda_kl / (lambda_kl + lambda_entropy)"""
     l_0: float = -1.0
     """the lower bound of the weighted log probability"""
     epsilon_tar: float = 1e-6
