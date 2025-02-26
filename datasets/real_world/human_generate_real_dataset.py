@@ -10,7 +10,7 @@ from datetime import datetime
 # Import the DuckieBot environment
 from environments.real_world_environment import DuckieBotDiscrete
 
-env = DuckieBotDiscrete()
+env = DuckieBotDiscrete(robot_name="gastone")
 obs, info = env.reset()
 
 data = []  # To store interaction samples
@@ -29,14 +29,11 @@ current_action = None  # Default to no action
 
 
 def on_press(key):
-    print("> pressed key ", str(key))
     global current_action
     if key in key_action_map:
         current_action = key_action_map[key]
-        print("> current action:", current_action)
 
 def on_release(key):
-    print("> released key ", str(key))
     global current_action
     if key in key_action_map:
         current_action = None  # Reset to no action
@@ -52,33 +49,36 @@ try:
     while True:
         if current_action is None:
             if robot_is_moving:
-                env.set_velocity_raw()     # Stop the robot
                 robot_is_moving = False
             continue
-        else:
-            robot_is_moving = True
         if current_action == 4:
-            env.apply_action()      # Stop the robot
+            print("current action is 4 STOOOP")
             break
+        else:
+            print("current action is ", current_action)
+            robot_is_moving = True
 
-        print("Current action: ", current_action)
-        last_obs = env.get_observation()
         next_obs, reward, terminated, truncated, info = env.step(current_action)
 
-        # Store interaction sample
-        data.append({
-            "s": last_obs.flatten().tolist(),
-            "a": current_action,
-            "r": reward,
-            "d": terminated or truncated,
-            "next_s": next_obs.flatten().tolist()
-        })
+        if last_obs is not None:
+            print("data build")
+            # Store interaction sample
+            data.append({
+                "s": last_obs.flatten().tolist(),
+                "a": current_action,
+                "r": reward,
+                "d": terminated or truncated,
+                "next_s": next_obs.flatten().tolist()
+            })
+        last_obs = next_obs.copy()
 
         if terminated or truncated:
             obs, info = env.reset()
 except KeyboardInterrupt:
+    print("keyboard interupted")
     pass
 finally:
+    print("In finally")
     env.close()
     listener.stop()
 

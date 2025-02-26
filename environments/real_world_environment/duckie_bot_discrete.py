@@ -105,11 +105,15 @@ class DuckieBotDiscrete(Env):
             available_actions = list(set(range(self.action_space.n)) - {int(action)})
             action = random.choice(available_actions)
 
+        print("sending action", action, "to robot", self.robot_name)
+
         # print(f"Action chosen: {original_action} -> {action} (after stochasticity)")  # Debugging log
         if isinstance(action, np.ndarray):
             action = int(action)
-        
+
+        print("publishing ...")
         self.actions_publisher.publish(action)
+        print("published.")
 
         # Wait until a new observation is received
         self.observation_event.wait()  # Blocks execution until the event is set
