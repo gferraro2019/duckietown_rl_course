@@ -68,7 +68,8 @@ class DuckieBotDiscrete(Env):
         
         # Ros stuff
         rospy.init_node('robot_discrete_environment', anonymous=True)   # Initialise the ros node
-        self.actions_publisher = rospy.Publisher('/' + str(self.robot_name) + '/discrete_action', Int32, queue_size=10) # Create a publisher actions
+        self.actions_publisher = rospy.Publisher('/' + self.robot_name + '/discrete_action', Int32, queue_size=10) # Create a publisher actions
+        print(self.actions_publisher.name)
         self._image_bridge = CvBridge()
         self.last_observation = None    # Not important, it will be instantiated when we receive the first observation.
         self.observation_subscriber = rospy.Subscriber(
@@ -98,6 +99,7 @@ class DuckieBotDiscrete(Env):
             rospy.logerr(f"Error processing image: {e}")
 
     def step(self, action):
+        print("    [environment] Received action", action)
 
         assert self.action_space.contains(action)
         original_action = action
@@ -105,15 +107,15 @@ class DuckieBotDiscrete(Env):
             available_actions = list(set(range(self.action_space.n)) - {int(action)})
             action = random.choice(available_actions)
 
-        print("sending action", action, "to robot", self.robot_name)
+        print("    [environment] Sending action", action, "to robot", self.robot_name)
 
         # print(f"Action chosen: {original_action} -> {action} (after stochasticity)")  # Debugging log
         if isinstance(action, np.ndarray):
             action = int(action)
 
-        print("publishing ...")
+        print("    [environment] publishing ...")
         self.actions_publisher.publish(action)
-        print("published.")
+        print("    [environment] published.")
 
         # Wait until a new observation is received
         self.observation_event.wait()  # Blocks execution until the event is set
