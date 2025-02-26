@@ -79,7 +79,6 @@ class DuckieBotAPI(object):
 
         # Init a node for this api
         #self.node = rospy.init_node('api_from_' + socket.gethostname(), anonymous=True)
-        self.nb_messages_received = 0
         print("  > Initializing node...")
         self.node = rospy.init_node('actions_converter', anonymous=True)
         print("  > Node initialized.")
@@ -166,7 +165,7 @@ class DuckieBotAPI(object):
         # Send the last observation received
         rate = rospy.Rate(10)
         if not rospy.is_shutdown():
-            self.commands_publisher.publish(self.last_observation_message)
+            self.observations_publisher.publish(self.last_observation_message)
             rate.sleep()
 
 if __name__ == "__main__":

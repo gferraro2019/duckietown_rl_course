@@ -29,11 +29,14 @@ current_action = None  # Default to no action
 
 
 def on_press(key):
+    print("> pressed key ", str(key))
     global current_action
     if key in key_action_map:
         current_action = key_action_map[key]
+        print("> current action:", current_action)
 
 def on_release(key):
+    print("> released key ", str(key))
     global current_action
     if key in key_action_map:
         current_action = None  # Reset to no action
