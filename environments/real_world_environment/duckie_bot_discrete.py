@@ -12,11 +12,13 @@ from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge
 from std_msgs.msg import Header
 from cv_bridge import CvBridge
-from environments.real_world_environment.api import DuckieBotAPI
 from gymnasium import Env
+from std_msgs.msg import Int32
+from cv_bridge import CvBridge
+import threading
 
 
-class DuckieBotDiscrete(DuckieBotAPI, Env):
+class DuckieBotDiscrete(Env):
 
     """
     DuckieBot environment with discrete actions.
@@ -47,17 +49,53 @@ class DuckieBotDiscrete(DuckieBotAPI, Env):
                 Default = 0.
         """
 
+        print()
+        print("    ______________________________________________________    ")
+        print()
+        print("   ___                 _            _   _       ____  _     _ ")
+        print("  |_ _|_ __         __| | ___ _ __ | |_| |__   |  _ \| |   | |")
+        print("   | || '_ \ _____ / _` |/ _ \ '_ \| __| '_ \  | |_) | |   | |")
+        print("   | || | | |_____| (_| |  __/ |_) | |_| | | | |  _ <| |___|_|")
+        print("  |___|_| |_|      \__,_|\___| .__/ \__|_| |_| |_| \_\_____(_)")
+        print("                             |_|                              ")
+        print("    ______________________________________________________    ")
+        print()
+        print()
+
         print("  > Initializing environment... ")
-        super().__init__(**params)
+        super().__init__()
+        self.robot_name: str = params.get("robot_name", "paperino")
+        
+        # Ros stuff
+        rospy.init_node('robot_discrete_environment', anonymous=True)   # Initialise the ros node
+        self.actions_publisher = rospy.Publisher('/' + str(self.robot_name) + '/discrete_action', Int32, queue_size=10) # Create a publisher actions
+        self._image_bridge = CvBridge()
+        self.last_observation = None    # Not important, it will be instantiated when we receive the first observation.
+        self.observation_subscriber = rospy.Subscriber(
+            f"/{self.robot_name}/observations",
+            CompressedImage,
+            self.observation_callback
+        )
+        self.observation_event = threading.Event()  # Used to wait for an observation message
+
+        # Env stuff
         self.observation_space = Box(low=0, high=255, shape=(480, 640, 3), dtype=np.uint8)  # Images observation space
         self.action_space = Discrete(4)     # Action space with four possible actions (from 0 to 3 included)
 
-        self.fixed_linear_velocity: float = params.get("fixed_linear_velocity", 0.25)
-        self.fixed_angular_velocity: float = params.get("fixed_angular_velocity", 0.12)
-        self.action_duration: float = params.get("action_duration", 0.3)
         self.stochasticity: float = params.get("stochasticity", 0.0)      # Probability to take a different action,
 
         print("  > Environment initialized.")
+
+
+    def observation_callback(self, observation_message):
+        """
+        This function is called everytime an observation is received.
+        Returns: None
+        """
+        try:
+            self.last_observation = self._image_bridge.compressed_imgmsg_to_cv2(observation_message)[150:]
+        except Exception as e:
+            rospy.logerr(f"Error processing image: {e}")
 
     def step(self, action):
 
@@ -70,20 +108,13 @@ class DuckieBotDiscrete(DuckieBotAPI, Env):
         # print(f"Action chosen: {original_action} -> {action} (after stochasticity)")  # Debugging log
         if isinstance(action, np.ndarray):
             action = int(action)
-        if action == self.Actions.FORWARD.value:
-            self.apply_action(linear_velocity=self.fixed_linear_velocity)
-        elif action == self.Actions.BACKWARD.value:
-            self.apply_action(linear_velocity=-self.fixed_linear_velocity)
-        elif action == self.Actions.LEFT.value:
-            self.apply_action(angular_velocity=self.fixed_angular_velocity)
-        elif action == self.Actions.RIGHT.value:
-            self.apply_action(angular_velocity=-self.fixed_angular_velocity)
+        
+        self.actions_publisher.publish(action)
 
-        # Now the action is performed, return the observation
-        # NB: Because you have to design your own reward, the reward isn't computed here.
-        # Compute it after the call to this function.
-        observation = self.get_observation()
-        return observation, 0, False, False, {}
+        # Wait until a new observation is received
+        self.observation_event.wait()  # Blocks execution until the event is set
+
+        return self.last_observation, 0, False, False, {}
 
     def reset(self, seed=None, options=None):
         print("    ########################################    ")
@@ -95,5 +126,5 @@ class DuckieBotDiscrete(DuckieBotAPI, Env):
         print("    ########################################    ")
         input("Press any key to continue ...")
         time.sleep(0.2)
-        return self.get_observation(), {}
+        return self.last_observation, {}
 

@@ -13,7 +13,6 @@ from cv_bridge import CvBridge
 import keyboard
 import time
 from environments.real_world_environment.duckie_bot_discrete import DuckieBotDiscrete
-from environments.real_world_environment.api import DuckieBotAPI
 import gymnasium
 
 
