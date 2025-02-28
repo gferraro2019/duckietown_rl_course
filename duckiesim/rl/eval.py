@@ -58,7 +58,7 @@ def evaluate_with_rendering(model_path, env_id, num_episodes=10, seed=0, tau_sof
     env.close()
 
 if __name__ == "__main__":
-    model_path = "/home/p.le-tolguenec/Documents/duckietown_rl_course/model/exp_1/munchausen_400000_1611.264705538024.pt"  # Adapter au chemin réel
+    model_path = "/home/p.le-tolguenec/Documents/duckietown_rl_course/model/exp_1/munchausen_430404_1746.0135750578204.pt"  # Adapter au chemin réel
     env_id = "DuckietownDiscrete-v0"
 
     evaluate_with_rendering(model_path, env_id, num_episodes=20, seed=42, tau_soft=0.05)

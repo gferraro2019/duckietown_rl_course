@@ -33,24 +33,25 @@ Here is the planned schedule for the three days:
 
 | **Day** | **Time**   | **Session**                                   | **Key Goals**                                      |
 |---------|------------|-----------------------------------------------|--------------------------------------------------|
-| Day 1   | 08:00-10:00 | Getting started with codebase           | Installation + Manual Control          |
-|         | 10:00-12:00 | RL Environment + Reward shaping   | Prepare the environment for training   |
-|         | 13:00-15:00 | Handling real robots | Make real robots work  (harder than it looks)                     |
-|         | 15:00-17:00 | Project presentation and Group set-up        |      The competition begins        |
-| Day 2   | 08:00-10:00 | Reading group                        | Understand how to solve the problem                      |
-|         | 10:00-12:00 | Implementation \& Debbug        | Make it work  |
-|         | 13:00-15:00 |  Implementation \& Debbug        | Make it work  |
-|         | 15:00-17:00 |  Implementation \& Debbug        | Make it work  |       
-| Day 3   | 08:00-10:00 |  Implementation \& Debbug        | Make it work  |                 
-|         | 10:00-12:00 |  Implementation \& Debbug        | Make it work  |
-|         | 13:00-15:00 | Competition                    | Win     |
-|         | 15:00-17:00 | Presentation   | Evaluation            |
+| Day 1   | 08:30-10:00 | Intro           | Understand the objectives + Installation + Manual Control          |
+|         | 10:00-10:30 | Munchausen   | Understand Munchausen  |
+|         | 10:30-11:45 | HP tuning + Reward shaping   | Prepare the environment for training   |
+|         | 13:30-13:45 | Policy evaluation | Make real robots work  Policy evaluation at the end of training                     |
+|         | 13:45-15:00 | Real world setup | Control the real world robot          |
+|         | 15:15-16:45 | Project presentation and Group set-up        |      The competition begins        |
+| Day 2   | 08:30-10:00 | Brainstorming                        | Understand how to solve the problem                      |
+|         | 10:15-11:45 | Implementation \& debug        | Make it work  |      
+| Day 3   | 08:30-10:00 |  Implementation \& debug        | Make it work  |                 
+|         | 10:15-11:45 |  Implementation \& debug        | Make it work  |
+|         | 13:30-15:00 | Implementation \& debug        | Make it work  |
+|         | 15:15-16:00 | Preparing presentations   | Building the pitch            |
+|         | 16:00-16:45 | Presentation   | Evaluation            |
 
 
 
 ## RL Robot Project Evaluation Grid
 
-### Project Presentation and Implementation (15 points)
+### Project Presentation and Implementation (18 points)
 
 The project presentation will be a concise demonstration of your work and approach. While slides are not required, you should prepare a well-structured verbal explanation of your methodology, technical choices, and results. Be ready to clearly articulate your reasoning, explain the challenges you encountered and how you overcame them, and demonstrate your understanding of the RL algorithms used. What matters most is the quality of your argumentation and your ability to critically analyze your own work, not the visual support.
 
@@ -60,54 +61,16 @@ The project presentation will be a concise demonstration of your work and approa
 | **Justification of technical choices** | Choices are not or poorly justified | Choices are partially justified without in-depth analysis | Choices are well justified with relevant analysis | Choices are perfectly justified with thorough critical analysis and considered alternatives |
 | **Understanding of RL algorithms** | Superficial understanding of algorithms used | Good understanding of the basics of algorithms used | Strong mastery of algorithms with ability to explain | Deep mastery with critical analysis and understanding of nuances |
 | **Experimentation and analysis** | Few or no experiments | Some experiments without in-depth analysis | Relevant experiments with results analysis | Systematic experiments with comparative analyses and relevant conclusions |
-| **Simulator to real-world adaptation** | Major difficulties in simulator-to-real adaptation | Partial adaptation with limited adjustments | Good adaptation with relevant adjustments | Excellent adaptation with methodical and effective adjustment strategy |
+| **Future directions** | Unable to identify meaningful future work | Identifies basic next steps without clear justification | Proposes well-reasoned future directions based on results | Presents comprehensive, strategic future directions with clear prioritization informed by conclusions |
 | **Code documentation** | Code poorly documented or not at all | Partially documented code | Well documented and organized code | Exemplary, perfectly documented and structured code |
-| **Problem solving** | Few problems identified and solved | Problems identified but limited solutions | Good identification and resolution of problems | Excellent ability to anticipate, identify and solve complex problems |
 
-### Competition (5 points)
+### Competition (2 points)
 
 | Position | Score |
 |----------|---------------|
-| 1st place | 5 points |
-| 2nd place | 4 points |
-| 3rd place | 3.5 points |
-| 4th place | 3 points |
-| 5th place | 2.5 points |
-| 6th place and beyond | 2 points |
+| 1st place | 2 points |
+| 2nd place | 1 points |
+| 3rd place | 0 points |
 
 
-## INSTALLATION:
 
-### 0. Create the conda environment:
-`conda env create -f environment.yaml`
-
-### 1. Activate the new conda environment:
-`conda activate duckietownrl`
-
-## UNINSTALLATION:
-
-### To remove the conda environment:
-`conda remove -n duckietownrl --all`
-
-## SIMULATOR:
-### For playing with the keyboard:
-`./manual_control.py`
-
-### For playing with the joystick:
-`./joystick_control.py`
-
-## TRAINING A MODEL WITH SAC:
-The following script can run several environments in parallel and collect experience in the same Replay Buffer
-
-### For a standard version:
-`python duckietownrl/parallel_training.py`
-
-### For imitation learning with the joystick:
-Press the j key to activate and deactivate the joystick control. By default, the joystick is activated, and you have to move with it to collect a new experience; otherwise, it returns, and no steps are done. Once you finish manually controlling, press the j key to let the agent train independently.
-
-`python duckietownrl/parallel_training_imitation_learning.py`
-
-## TO EVALUATE A MODEL:
-Remember to specify the path for your model in the script.
-
-`python duckietownrl/evaluate.py`
