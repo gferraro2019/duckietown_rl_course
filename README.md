@@ -14,6 +14,10 @@ Through this hands-on experience, you will gain practical insights into:
 
 ## Organization
 
+### Prerequisites (Docker)
+First, you need to install docker (if you haven't already) by following the instructions in the [Docker installation guide](https://docs.docker.com/get-docker/).
+Then follow the instructions in the [Docker initialization](#docker-initialization) section to build and run the docker image.
+
 ### Day 1: Discovery and Exploration
 - **Morning**: Students will familiarize themselves with the simulator that models the Duckiebot and train an RL agent using the provided instructions in [duckiesim.md](duckiesim/duckiesim.md) file. This file explains how to set up the environment and guides students through the first steps of training.
 - **Afternoon**: Students will first get hands-on experience with the real Duckiebots. Then, they will form groups to brainstorm and develop a solution for automating the robot using RL. The entire process of deploying RL in the real world is detailed in [duckiereal.md](duckiereal/duckiereal.md) file.
@@ -102,7 +106,11 @@ docker build -t duckie-course .
 ```
 
 ### Run docker image
-
+Run the following command to make the script executable:
 ```bash
-docker run -it --name duckie-container --gpus all -env DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v $(pwd):/home/duckietown_rl_course  --network=host --ipc=host  duckie-course bash
+chmod +x launch_docker.sh
+```
+Run the following command to start the container:
+```bash
+./launch_docker.sh
 ```

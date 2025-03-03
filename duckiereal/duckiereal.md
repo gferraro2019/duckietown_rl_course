@@ -1,3 +1,36 @@
+# Duckiebot in Real
+
+
+# Objective: Complete three laps of the circuit as quickly as possible with the real robot.
+
+The aim of this course is to give you the opportunity to test a reinforcement learning algorithm on a real robot. You won't be evaluated completely on the technical result obtained, as what you're trying to achieve is difficult (see readme file for evaluation). However, your reasoning, approach and investment will condition the grade and also your chances of success. 
+
+In the simulation section, you will have been able to work with the simulated version of the robots, which is easy to query and, above all, very sample efficient (ability to generate data quickly in this precise context). The real robot is not, of course. So you're going to have to think about the different possibilities available to you to get a model that works on the real robot. 
+
+We recommend that you start from one of the following three directions: 
+* [Domain_randomization](./domain_randomization/domain_randomization.md) 
+* [Imitation_learning](./imitation_learning/behavioral_cloning.md) 
+* [Model predictive control](./mpc/mpc.md)
+
+The aim is not to follow these algorithms to the letter, but rather to draw inspiration from them. You can hybridize methods between them and even start from other approaches in which you believe. 
+We leave you free to make your own technical choices. The aim is for you to propose a rational scientific approach, which you will present to us at the end with results that confirm or refute your hypotheses.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Welcome to the DuckieTown Robots page
 First of all, DuckieTown has its own shell that you can invoke with the command dts.
 
