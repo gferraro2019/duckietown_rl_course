@@ -74,3 +74,35 @@ The project presentation will be a concise demonstration of your work and approa
 
 
 
+## Docker initialization
+
+### ssh connection 
+In case of ssh connection, set the '-Y' flag to forward the display to your local machine:
+
+```shell
+ssh -Y user@ip
+```
+
+### Install nvidia-docker2
+First, install nvidia-docker2 on your machine to use your gpu in the container:
+
+```shell
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID) \
+  && curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add - \
+  && curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+sudo apt-get update
+sudo apt-get install -y nvidia-docker2
+sudo systemctl restart docker
+```
+
+### Create docker image 
+
+```bash
+docker build -t duckie-course .
+```
+
+### Run docker image
+
+```bash
+docker run -it --name duckie-container --gpus all -env DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v $(pwd):/home/duckietown_rl_course  --network=host --ipc=host  duckie-course bash
+```

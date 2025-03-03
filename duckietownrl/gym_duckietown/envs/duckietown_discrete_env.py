@@ -1,7 +1,7 @@
 # coding=utf-8
 import numpy as np
 from gymnasium import spaces
-from duckietown_rl_course.duckiesim.rl.custom_reward_function import compute_custom_reward
+from duckiesim.rl.custom_reward_function import compute_custom_reward
 from ..simulator import Simulator
 from .. import logger
 

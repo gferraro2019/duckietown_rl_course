@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# manual_control_pynput
+# manual_control_pygame
 
 """
 This script allows you to manually control the simulator or Duckiebot
-using the keyboard arrows with pynput.
+using the keyboard arrows with Pygame.
 """
 
 from PIL import Image
@@ -13,7 +13,7 @@ import os
 import gymnasium as gym
 import numpy as np
 import pandas as pd
-from pynput import keyboard
+import pygame
 import cv2
 from duckietownrl.gym_duckietown.envs import DuckietownDiscretEnv
 import time
@@ -34,6 +34,11 @@ parser.add_argument("--seed", default=1, type=int, help="seed")
 args = parser.parse_args()
 
 
+# --- Initialisation de pygame ---
+pygame.init()
+# Créer une fenêtre visible, mais très petite pour la gestion des touches
+window = pygame.display.set_mode((1, 1))
+pygame.display.set_caption("")  # Titre vide
 
 # --- Initialisation de l'environnement ---
 env = DuckietownDiscretEnv(
@@ -50,6 +55,13 @@ env = DuckietownDiscretEnv(
 
 env.reset()
 env.render()
+img = env.render("rgb_array")
+cv2.imshow("image", img)
+cv2.waitKey(1)
+
+
+
+
 
 print(f'Action space: {env.action_space}')
 print(f'Observation space: {env.observation_space}')
@@ -67,65 +79,64 @@ key_states = {
 # Pour enregistrer les données
 data = []
 
-# --- Gestion des entrées clavier ---
-def on_press(key):
-    """Gère les événements de pression de touches."""
-    global key_states
-
-    try:
-        if key.char == "r":  # Reset
-            print("RESET")
-            env.reset()
-            env.render()
-        elif key.char == "\r":  # Save screenshot
-            print("Saving screenshot")
-            img = env.render("rgb_array")
-            Image.fromarray(img).save("screenshot.png")
-    except AttributeError:
-        pass
-
-    if key == keyboard.Key.esc:  # Exit
-        env.close()
-        sys.exit(0)
-    elif key == keyboard.Key.up:
-        key_states["up"] = True
-    elif key == keyboard.Key.down:
-        key_states["down"] = True
-    elif key == keyboard.Key.left:
-        key_states["left"] = True
-    elif key == keyboard.Key.right:
-        key_states["right"] = True
-    elif key == keyboard.Key.space:
-        key_states["space"] = True
-
-def on_release(key):
-    """Gère les événements de relâchement de touches."""
-    global key_states
-    print(f"key released: {key}")
-    if key == keyboard.Key.up:
-        key_states["up"] = False
-    elif key == keyboard.Key.down:
-        key_states["down"] = False
-    elif key == keyboard.Key.left:
-        key_states["left"] = False
-    elif key == keyboard.Key.right:
-        key_states["right"] = False
-    elif key == keyboard.Key.space:
-        key_states["space"] = False
-
 # --- Programme principal ---
 if __name__ == "__main__":
-    # Lance l'écouteur de clavier
-    listener = keyboard.Listener(on_press=on_press, on_release=on_release)
-    listener.start()
+    print("Écouteur de clavier actif. Utilisez les flèches pour contrôler le robot.")
+    print("La fenêtre Pygame doit avoir le focus - cliquez dessus si nécessaire.")
+    print("r: reset, Entrée: capture d'écran, Échap: quitter")
+    
     seed = 0
-
+    
     # Boucle principale
     try:
         total_reward = 0.0
-        current_obs, _ = env.reset(seed = seed)  # Réinitialisation de l'environnement
+        current_obs, _ = env.reset(seed=seed)  # Réinitialisation de l'environnement
+        running = True
 
-        while True:
+        while running:
+            # Traitement des événements Pygame
+            for event in pygame.event.get():
+                # pygame.display.flip()
+                if event.type == pygame.QUIT:
+                    # running = False
+                    pass
+                    
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r:  # Reset
+                        print("RESET")
+                        env.reset()
+                        env.render()
+                    elif event.key == pygame.K_RETURN:  # Save screenshot
+                        print("Saving screenshot")
+                        img = env.render("rgb_array")
+                        Image.fromarray(img).save("screenshot.png")
+                    elif event.key == pygame.K_ESCAPE:  # Exit
+                        # running = False
+                        pass
+                    elif event.key == pygame.K_UP:
+                        key_states["up"] = True
+                    elif event.key == pygame.K_DOWN:
+                        key_states["down"] = True
+                    elif event.key == pygame.K_LEFT:
+                        key_states["left"] = True
+                    elif event.key == pygame.K_RIGHT:
+                        key_states["right"] = True
+                    elif event.key == pygame.K_SPACE:
+                        key_states["space"] = True
+                        
+                elif event.type == pygame.KEYUP:
+                    if event.key == pygame.K_UP:
+                        key_states["up"] = False
+                    elif event.key == pygame.K_DOWN:
+                        key_states["down"] = False
+                    elif event.key == pygame.K_LEFT:
+                        key_states["left"] = False
+                    elif event.key == pygame.K_RIGHT:
+                        key_states["right"] = False
+                    elif event.key == pygame.K_SPACE:
+                        key_states["space"] = False
+                    print(f"key released: {pygame.key.name(event.key)}")
+            
             # Détermine l'action en fonction des touches pressées
             if key_states["up"]:
                 print("up") 
@@ -147,6 +158,7 @@ if __name__ == "__main__":
             next_obs, reward, done, _, _ = env.step(action)
             time.sleep(0.002)
             print(f"next obs shape: {len(next_obs.flatten().tolist())}")  
+            
             # Enregistre les données de la simulation
             data.append({
                 "s": current_obs.flatten().tolist(),
@@ -166,7 +178,7 @@ if __name__ == "__main__":
                 print("done!")
                 print(f"Total reward: {total_reward}")
                 time.sleep(2)
-                current_obs, _ = env.reset(seed = seed)  # Réinitialisation de l'environnement
+                current_obs, _ = env.reset(seed=seed)  # Réinitialisation de l'environnement
                 total_reward = 0.0
 
             # Affiche l'image de l'environnement
@@ -175,10 +187,14 @@ if __name__ == "__main__":
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
+            # Garde la fenêtre Pygame active
+            # pygame.display.flip()
+            print("running",  running)
+        print("Programme terminé.")
     except KeyboardInterrupt:
-        env.close()
-        print("Programme arrêté.")
+        print("Programme arrêté par l'utilisateur.")
     finally:
+        print("Fermeture de l'environnement.")
         if args.data_save:
             # --- Configuration du chemin de sortie ---
             script_dir = os.path.dirname(os.path.realpath(__file__))  # Répertoire du script
@@ -193,4 +209,8 @@ if __name__ == "__main__":
             df = pd.DataFrame(data)
             df.to_parquet(output_file, engine="pyarrow", index=False)
             print(f"Les données ont été sauvegardées dans le fichier : {output_file}")
+        
+        env.close()
         cv2.destroyAllWindows()
+        pygame.quit()
+        sys.exit(0)
