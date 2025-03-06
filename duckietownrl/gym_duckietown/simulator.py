@@ -168,13 +168,13 @@ DEFAULT_FRAMERATE = 30
 
 DEFAULT_MAX_STEPS = 1500
 
-DEFAULT_MAP_NAME = "small_loop" #"udem1"
+DEFAULT_MAP_NAME = "small_loop"  # "udem1"
 
 DEFAULT_FRAME_SKIP = 1
 
 DEFAULT_ACCEPT_START_ANGLE_DEG = 60
 
-REWARD_INVALID_POSE = -100 # -1000
+REWARD_INVALID_POSE = -100  # -1000
 
 MAX_SPAWN_ATTEMPTS = 5000
 
@@ -1790,11 +1790,14 @@ class Simulator(gym.Env):
         gz = GH * tile_size - cp[1]
         return [gx, gy, gz], angle
 
-    def compute_reward(self, pos, angle, speed, action ):
+    def compute_reward(self, pos, angle, speed, action):
         lp = self.get_lane_pos2(pos, angle)
         self.lp = lp
-        (   x_blue_center, y_blue_center,
-            x_white_center, y_white_center,
+        (
+            x_blue_center,
+            y_blue_center,
+            x_white_center,
+            y_white_center,
             distance_from_yellow,
             distance_from_white,
             action_fased_on_white,
@@ -1802,14 +1805,13 @@ class Simulator(gym.Env):
         ) = self.process_image(self.img_array)
         r_blue = -2.0
         if x_blue_center is not None:
-            dist_blue = np.sqrt(x_blue_center ** 2 + y_blue_center ** 2)
-            r_blue = -dist_blue+np.sqrt(2)
-        speed_action = (action[0] * 10.0 if np.abs(action[0]) > 0.1 else 0.0)/2.5
+            dist_blue = np.sqrt(x_blue_center**2 + y_blue_center**2)
+            r_blue = -dist_blue + np.sqrt(2)
+        speed_action = (action[0] * 10.0 if np.abs(action[0]) > 0.1 else 0.0) / 2.5
         # print(f"reward: {r_blue + speed_action}")
-        reward =  (r_blue + speed_action)/10.0
+        reward = (r_blue + speed_action) / 10.0
 
         return reward
-
 
     def process_image(self, image):
         """
@@ -1859,7 +1861,6 @@ class Simulator(gym.Env):
         contours_white, _ = cv2.findContours(
             mask_white, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
-        
 
         # Find the centroid of the yellow region
         centroid_x_yellow = None
@@ -1893,8 +1894,8 @@ class Simulator(gym.Env):
         y_blue_center = None
         if centroid_x_yellow is not None and centroid_y_yellow is not None:
             # print(f"centroid_x_yellow: {centroid_x_yellow} centroid_y_yellow: {centroid_y_yellow}")
-            x_blue_center = (centroid_x_yellow/width - 0.5) * 2
-            y_blue_center = -(centroid_y_yellow/height - 0.5) * 2
+            x_blue_center = (centroid_x_yellow / width - 0.5) * 2
+            y_blue_center = -(centroid_y_yellow / height - 0.5) * 2
             # distance from center
             distance_from_yellow = np.sqrt(
                 (centroid_x_yellow - width) ** 2 + (centroid_y_yellow - height / 2) ** 2
@@ -1902,8 +1903,8 @@ class Simulator(gym.Env):
         x_white_center = None
         y_white_center = None
         if centroid_x_white is not None and centroid_y_white is not None:
-            x_white_center = (centroid_x_white/width - 0.5) * 2 
-            y_white_center = -(centroid_y_white/height - 0.5) * 2
+            x_white_center = (centroid_x_white / width - 0.5) * 2
+            y_white_center = -(centroid_y_white / height - 0.5) * 2
             # print(f"x_white_center: {x_white_center} y_white_center: {y_white_center}")
             distance_from_white = np.sqrt(
                 (centroid_x_white - 0) ** 2 + (centroid_y_white - height / 2) ** 2
@@ -1955,8 +1956,10 @@ class Simulator(gym.Env):
         # Return the result image and distances (for both yellow and white lines)
 
         return (
-            x_blue_center, y_blue_center,
-            x_white_center, y_white_center,
+            x_blue_center,
+            y_blue_center,
+            x_white_center,
+            y_white_center,
             distance_from_yellow,
             distance_from_white,
             action_according_white,
@@ -2159,12 +2162,12 @@ class Simulator(gym.Env):
         obs = self.render_obs()
         misc = self.get_agent_info()
 
-        d = self._compute_done_reward(action = action)
+        d = self._compute_done_reward(action=action)
         misc["Simulator"]["msg"] = d.done_why
 
         return obs, d.reward, d.done, misc
 
-    def _compute_done_reward(self, action ) -> DoneRewardInfo:
+    def _compute_done_reward(self, action) -> DoneRewardInfo:
         # If the agent is not in a valid pose (on drivable tiles)
         if not self._valid_pose(self.cur_pos, self.cur_angle):
             msg = "Stopping the simulator because we are at an invalid pose."
@@ -2184,7 +2187,9 @@ class Simulator(gym.Env):
             done_code = "max-steps-reached"
         else:
             done = False
-            reward = self.compute_reward(self.cur_pos, self.cur_angle, self.speed, action)
+            reward = self.compute_reward(
+                self.cur_pos, self.cur_angle, self.speed, action
+            )
             msg = ""
             done_code = "in-progress"
 
@@ -2489,7 +2494,9 @@ class Simulator(gym.Env):
 
         return observation
 
-    def render(self, mode: str = "rgb_array", close: bool = False, segment: bool = False):
+    def render(
+        self, mode: str = "rgb_array", close: bool = False, segment: bool = False
+    ):
         """
         Render the environment for human viewing
 
@@ -2605,6 +2612,7 @@ def _update_pos(self, action):
     q = self.state.TSE2_from_state()[0]
     pos, angle = self.weird_from_cartesian(q)
     pos = np.asarray(pos)
+    print(pos, angle)
     return pos, angle
 
 
