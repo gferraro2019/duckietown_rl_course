@@ -279,7 +279,8 @@ class Race:
 
         # in the following state we do not know the direction yet.
         elif self.counter_checkpt == 1:
-            if len(self.next_checkpt)>1:
+            # we come from 0
+            if isinstance(self.next_checkpt,list):
                 if self.curr_checkpt == self.next_checkpt[0]:
                     self.go_forward = False
                     self.next_checkpt =self.list_checkpts[(idx - 1) % len(self.list_checkpts)]
@@ -289,6 +290,8 @@ class Race:
                     self.go_forward = True
                     self.next_checkpt =self.list_checkpts[(idx + 1) % len(self.list_checkpts)]
                     self.counter_checkpt += 1
+
+            # we're going in the wrong direction
             else:
                 if self.curr_checkpt == self.next_checkpt:
                     self.go_forward = not self.go_forward
@@ -297,14 +300,15 @@ class Race:
                 else:
                     self.counter_checkpt -= 1
                     self.next_checkpt = None
+                    self.prev_checkpt = None
 
 
         # in the following state we do know the direction.
         elif self.counter_checkpt > 1:
             if self.curr_checkpt != self.next_checkpt:
                 self.counter_checkpt -= 1
-                self.go_forward = not self.go_forward
-                self.next_checkpt = self.curr_checkpt
+                # self.go_forward = not self.go_forward
+                self.next_checkpt = self.prev_checkpt
             else:
                 if self.go_forward is False:
                     self.next_checkpt =self.list_checkpts[(idx - 1) % len(self.list_checkpts)]
