@@ -166,7 +166,7 @@ DEFAULT_ROBOT_SPEED = 1.20
 
 DEFAULT_FRAMERATE = 30
 
-DEFAULT_MAX_STEPS = 1500
+DEFAULT_MAX_STEPS = 1500000
 
 DEFAULT_MAP_NAME = "small_loop"  # "udem1"
 
@@ -192,6 +192,129 @@ class LanePosition(LanePosition0):
             angle_deg=self.angle_deg,
             angle_rad=self.angle_rad,
         )
+
+
+class CheckPoint:
+    nb_checkpoint = 0
+
+    def __init__(self, p1, p4, h_margin=0.3, v_margin=0.2):
+        """This function defines a rectangular Area that will be considered as a Checkpoint.
+
+        Args:
+            x (float): th x coordinate of the first point.
+            z (float): th x coordinate of the fourth point.
+            h_margin (float): the width of the rectangular area.
+            v_margin (float): the heigth of the rectangular area.
+
+        """
+        CheckPoint.nb_checkpoint += 1
+        self.name = "checkpoint" + str(CheckPoint.nb_checkpoint)
+        self.margin = h_margin
+        self.x1 = p1[0]
+        self.z1 = p1[2]
+        self.x4 = p4[0]
+        self.z4 = p4[2]
+
+    def check_is_inside(self, robot_pos):
+        x, _, z = robot_pos
+        is_inside = False
+        
+        #ck1
+        if x > self.x1 and x < self.x4 and z < self.z1 and z > self.z4:
+            is_inside = True
+        #ck2
+        elif x < self.x1 and x > self.x4 and z < self.z1 and z > self.z4:
+            is_inside = True
+        #ck3
+        elif x < self.x1 and x > self.x4 and z > self.z1 and z < self.z4:
+            is_inside = True
+        #ck4
+        elif x > self.x1 and x < self.x4 and z > self.z1 and z < self.z4:
+            is_inside = True
+
+        return is_inside
+
+
+class Race:
+    def __init__(self, list_checkpts):
+        self.list_checkpts = list_checkpts
+        self.counter_checkpt = 0
+        self.prev_checkpt = None
+        self.curr_checkpt = None
+        self.next_checkpt = None
+        self.go_forward = None
+    
+    def reset(self):
+        self.counter_checkpt = 0
+        self.prev_checkpt = None
+        self.curr_checkpt = None
+        self.next_checkpt = None
+        self.go_forward = None
+
+    def update_counter(self, robot_position):
+        for i, checkpt in enumerate(self.list_checkpts):
+            # check if is inside
+            if checkpt.check_is_inside(robot_position):
+                self.curr_checkpt = checkpt
+                if self.curr_checkpt != self.prev_checkpt:
+                    self.update_next_checkpoint()
+
+    def find_idx_checkpoint(self):
+        for i, ckpt in enumerate(self.list_checkpts):
+            if self.curr_checkpt == ckpt:
+                return i
+
+    def update_next_checkpoint(self):
+
+        # find idx of current checkpoint
+        idx = self.find_idx_checkpoint()
+
+        # update next checkpoints
+        if self.counter_checkpt == 0:
+            self.next_checkpt = [
+                self.list_checkpts[idx - 1],
+                self.list_checkpts[(idx + 1) % len(self.list_checkpts)],
+            ]
+            self.counter_checkpt += 1
+
+        # in the following state we do not know the direction yet.
+        elif self.counter_checkpt == 1:
+            if len(self.next_checkpt)>1:
+                if self.curr_checkpt == self.next_checkpt[0]:
+                    self.go_forward = False
+                    self.next_checkpt =self.list_checkpts[(idx - 1) % len(self.list_checkpts)]
+                    self.counter_checkpt += 1
+
+                elif self.curr_checkpt == self.next_checkpt[1]:
+                    self.go_forward = True
+                    self.next_checkpt =self.list_checkpts[(idx + 1) % len(self.list_checkpts)]
+                    self.counter_checkpt += 1
+            else:
+                if self.curr_checkpt == self.next_checkpt:
+                    self.go_forward = not self.go_forward
+                    self.next_checkpt =self.list_checkpts[(idx - 1) % len(self.list_checkpts)]
+                    self.counter_checkpt += 1
+                else:
+                    self.counter_checkpt -= 1
+                    self.next_checkpt = None
+
+
+        # in the following state we do know the direction.
+        elif self.counter_checkpt > 1:
+            if self.curr_checkpt != self.next_checkpt:
+                self.counter_checkpt -= 1
+                self.go_forward = not self.go_forward
+                self.next_checkpt = self.curr_checkpt
+            else:
+                if self.go_forward is False:
+                    self.next_checkpt =self.list_checkpts[(idx - 1) % len(self.list_checkpts)]
+                    self.counter_checkpt += 1
+                else:
+                    self.next_checkpt =self.list_checkpts[(idx + 1) % len(self.list_checkpts)]
+                    self.counter_checkpt += 1
+
+        # update previous checkpoint
+        self.prev_checkpt = self.curr_checkpt
 
 
 class Simulator(gym.Env):
@@ -270,6 +393,13 @@ class Simulator(gym.Env):
         :param style: String that represent which tiles will be loaded. One of ["photos", "synthetic"]
         :param enable_leds: Enables LEDs drawing.
         """
+        list_checkpts = [
+            CheckPoint((0.8, 0, 0.43), (1, 0, 0.13)),
+            CheckPoint((0.43, 0, 1.0), (0.13, 0, 0.8)),
+            CheckPoint((0.75, 0, 1.3), (0.55, 0, 1.6)),
+            CheckPoint((1.3, 0, 0.8), (1.6, 0, 1.0)),
+        ]
+        self.race = Race(list_checkpts)
         self.reward_invalid_pose = reward_invalid_pose
         self.worse_distance = 20
 
@@ -586,6 +716,8 @@ class Simulator(gym.Env):
         Reset the simulation at the start of a new episode
         This also randomizes many environment parameters (domain randomization)
         """
+        # reset counters for race
+        self.race.reset()
 
         # Step count since episode start
         self.step_count = 0
@@ -1689,6 +1821,8 @@ class Simulator(gym.Env):
         # Update the robot's position
         self.cur_pos, self.cur_angle = _update_pos(self, action)
 
+        self.race.update_counter(self.cur_pos)
+        print(f"N.checkpoints: {self.race.counter_checkpt}")
         self.step_count += 1
         self.timestamp += delta_time
 
